@@ -1,0 +1,35 @@
+.upload-page {
+  padding: 60px 30px;
+  text-align: center;
+  background-color: #fff8f0;
+}
+
+.upload-page input[type="file"] {
+  margin: 20px 0;
+}
+
+.upload-page img {
+  max-width: 300px;
+  margin-top: 20px;
+  border-radius: 8px;
+}
+
+.upload-page p {
+  font-size: 1rem;
+  color: green;
+  margin-top: 10px;
+}
+
+.upload-page button {
+  margin-top: 20px;
+  padding: 12px 25px;
+  background-color: #d84315;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.upload-page button:hover {
+  background-color: #bf360c;
+}

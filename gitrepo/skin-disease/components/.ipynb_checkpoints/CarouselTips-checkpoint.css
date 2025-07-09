@@ -1,0 +1,28 @@
+.carousel {
+  padding: 50px 20px;
+  text-align: center;
+  background-color: #f3f3f3;
+}
+
+.carousel img {
+  width: 250px;
+  margin-bottom: 20px;
+}
+
+.carousel p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.carousel button {
+  padding: 10px 20px;
+  background-color: #009688;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.carousel button:hover {
+  background-color: #00796b;
+}

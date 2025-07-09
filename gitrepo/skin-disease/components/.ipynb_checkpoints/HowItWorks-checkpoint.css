@@ -1,0 +1,41 @@
+.howitworks {
+  padding: 60px 30px;
+  background-color: #f0f8ff;
+  text-align: center;
+}
+
+.howitworks h2 {
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.steps div {
+  max-width: 200px;
+}
+
+.steps img {
+  width: 100px;
+  height: auto;
+  margin-bottom: 15px;
+}
+
+.howitworks button {
+  margin-top: 40px;
+  padding: 10px 20px;
+  background-color: #007acc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.howitworks button:hover {
+  background-color: #005fa3;
+}
