@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      MODEL_PATH: /app/models
+      PORT: "5000"
+      CORS_ORIGINS: http://localhost:3000
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-}
+      INTERVIEW_TABLE_NAME: ${INTERVIEW_TABLE_NAME:-career-ai-interviews-local}
+      INTERVIEW_MEDIA_BUCKET: ${INTERVIEW_MEDIA_BUCKET:-}
+      TRANSCRIBE_LANGUAGE_CODE: ${TRANSCRIBE_LANGUAGE_CODE:-en-US}
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AIInterviewTranscribe",
+      "Effect": "Allow",
+      "Action": [
+        "transcribe:StartTranscriptionJob",
+        "transcribe:GetTranscriptionJob",
+        "transcribe:TagResource"
+      ],
+      "Resource": "arn:aws:transcribe:ap-south-1:114354606708:transcription-job/*"
+    }
+  ]
+}

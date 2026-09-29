@@ -1,0 +1,5023 @@
+================ src/App.js ================
+import React from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import CssBaseline from "@mui/material/CssBaseline";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
+import {
+  Alert,
+  AppBar,
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  CircularProgress,
+  Checkbox,
+  Chip,
+  Container,
+  Divider,
+  Drawer,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputBase,
+  LinearProgress,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Select,
+  Snackbar,
+  Stack,
+  Switch,
+  Tab,
+  Tabs,
+  TextField,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+
+import {
+  ThemeProvider as MuiThemeProvider,
+  createTheme,
+} from "@mui/material/styles";
+
+import { AnimatePresence, motion } from "framer-motion";
+
+import {
+  MdAdd,
+  MdArrowBack,
+  MdArrowForward,
+  MdAutoAwesome,
+  MdCheckCircle,
+  MdDownload,
+  MdError,
+  MdLightMode,
+  MdRefresh,
+  MdSave,
+  MdCancel,
+  MdCloudUpload,
+  MdDarkMode,
+  MdDelete,
+  MdDescription,
+  MdEdit,
+  MdLightbulb,
+  MdLock,
+  MdLogout,
+  MdMenu,
+  MdMic,
+  MdNotifications,
+  MdPerson,
+  MdSearch,
+  MdSettings,
+  MdSpaceDashboard,
+  MdStop,
+  MdTrendingUp,
+  MdUploadFile,
+  MdWorkOutline,
+} from "react-icons/md";
+
+import { FcGoogle } from "react-icons/fc";
+import AIVideoInterview from "./pages/AIVideoInterview";
+
+const PRINT_CSS = `
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .resume-preview,
+  .resume-preview * {
+    visibility: visible !important;
+  }
+
+  .resume-preview {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 18mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
+`;
+
+/* ============================================================
+GLOBAL STYLES
+============================================================ */
+
+const GLOBAL_CSS = ` {
+--font-display: 'Sora', 'Inter', sans-serif;
+--font-body: 'Inter', sans-serif;
+}
+
+{
+box-sizing: border-box;
+}
+
+html,
+body {
+margin: 0;
+padding: 0;
+font-family: var(--font-body);
+scroll-behavior: smooth;
+}
+
+#root {
+min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+width: 8px;
+height: 8px;
+}
+
+::-webkit-scrollbar-track {
+background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+background: rgba(124, 58, 237, 0.35);
+border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+background: rgba(124, 58, 237, 0.55);
+}
+
+a {
+text-decoration: none;
+color: inherit;
+}
+
+.glass {
+background: rgba(255, 255, 255, 0.06);
+backdrop-filter: blur(18px);
+-webkit-backdrop-filter: blur(18px);
+border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-light {
+background: rgba(255, 255, 255, 0.7);
+backdrop-filter: blur(18px);
+-webkit-backdrop-filter: blur(18px);
+border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.gradient-text {
+background: linear-gradient(
+120deg,
+#2563EB 0%,
+#7C3AED 55%,
+#06B6D4 100%
+);
+
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+}
+
+.aurora-bg {
+position: fixed;
+inset: 0;
+z-index: -1;
+overflow: hidden;
+pointer-events: none;
+}
+
+.aurora-blob {
+position: absolute;
+border-radius: 50%;
+filter: blur(90px);
+opacity: 0.45;
+}
+`;
+
+function GlobalStyleTag() {
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: GLOBAL_CSS + PRINT_CSS,
+      }}
+    />
+  );
+}
+
+/* ============================================================
+GOOGLE FONTS
+============================================================ */
+
+function useGoogleFonts() {
+  useEffect(() => {
+    const link = document.createElement("link");
+
+    link.rel = "stylesheet";
+
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap";
+
+    document.head.appendChild(link);
+
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+}
+
+/* ============================================================
+THEME
+============================================================ */
+
+const brand = {
+  primary: "#2563EB",
+  secondary: "#7C3AED",
+  accent: "#06B6D4",
+  bgLight: "#F8FAFC",
+  bgDark: "#0F172A",
+};
+
+function buildTheme(mode) {
+  const isDark = mode === "dark";
+
+  return createTheme({
+    palette: {
+      mode,
+
+      primary: {
+        main: brand.primary,
+      },
+
+      secondary: {
+        main: brand.secondary,
+      },
+
+      info: {
+        main: brand.accent,
+      },
+
+      background: {
+        default: isDark ? brand.bgDark : brand.bgLight,
+
+        paper: isDark ? "#141B2E" : "#FFFFFF",
+      },
+
+      text: {
+        primary: isDark ? "#E7ECF7" : "#0F172A",
+
+        secondary: isDark ? "#94A3B8" : "#475569",
+      },
+    },
+
+    typography: {
+      fontFamily: "Inter, sans-serif",
+
+      h1: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 800,
+      },
+
+      h2: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 700,
+      },
+
+      h3: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 700,
+      },
+
+      h4: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 700,
+      },
+
+      h5: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 600,
+      },
+
+      h6: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 600,
+      },
+
+      button: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 600,
+        textTransform: "none",
+      },
+    },
+
+    shape: {
+      borderRadius: 16,
+    },
+
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            padding: "10px 22px",
+          },
+
+          containedPrimary: {
+            backgroundImage: `linear-gradient(120deg, ${brand.primary}, ${brand.secondary})`,
+
+            boxShadow: "0 8px 24px rgba(37, 99, 235, 0.28)",
+
+            "&:hover": {
+              boxShadow: "0 10px 30px rgba(124, 58, 237, 0.38)",
+            },
+          },
+        },
+      },
+
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+          },
+        },
+      },
+
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            borderRadius: 20,
+          },
+        },
+      },
+    },
+  });
+}
+
+const brandColors = brand;
+
+/* ============================================================
+INTERVIEW DATA
+============================================================ */
+
+const JOB_ROLES = [
+  "Software Engineer",
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "AI Engineer",
+  "Data Scientist",
+  "Python Developer",
+  "Java Developer",
+  "Cloud Engineer",
+  "Cyber Security",
+  "Machine Learning Engineer",
+];
+
+const EXPERIENCE_LEVELS = ["Fresher", "1 Year", "2 Years", "3+ Years"];
+
+const INTERVIEW_TYPES = ["Technical", "HR", "Mixed", "Behavioral"];
+
+const TECHNICAL_Q = {
+  "Software Engineer": [
+    "Explain the difference between an array and a linked list.",
+    "What is time complexity, and why does it matter?",
+    "How would you design a URL shortener?",
+    "Explain the SOLID principles briefly.",
+    "What is the difference between process and thread?",
+  ],
+
+  "Frontend Developer": [
+    "What is the virtual DOM and why does React use it?",
+    "Explain the difference between state and props.",
+    "How does CSS specificity work?",
+    "What are React hooks and why were they introduced?",
+    "How would you optimize a slow-loading web page?",
+  ],
+
+  "Backend Developer": [
+    "What is REST and what are its core principles?",
+    "Explain authentication versus authorization.",
+    "What is database indexing?",
+    "How does caching improve backend performance?",
+    "What is the difference between SQL and NoSQL?",
+  ],
+
+  "Full Stack Developer": [
+    "How does a request travel from browser to backend?",
+    "Explain REST API design.",
+    "How would you secure a full-stack application?",
+    "What is CORS and why does it happen?",
+    "How would you scale a web application?",
+  ],
+
+  "AI Engineer": [
+    "What is the difference between supervised and unsupervised learning?",
+    "Explain overfitting and how to prevent it.",
+    "What is a confusion matrix?",
+    "How do embeddings work?",
+    "What is the difference between training and inference?",
+  ],
+
+  "Data Scientist": [
+    "What is feature engineering?",
+    "Explain the bias-variance tradeoff.",
+    "What is cross-validation?",
+    "How do you handle missing data?",
+    "What is the difference between correlation and causation?",
+  ],
+
+  "Python Developer": [
+    "What are Python decorators?",
+    "Explain list comprehensions.",
+    "What is the difference between a list and tuple?",
+    "How does Python garbage collection work?",
+    "What are virtual environments?",
+  ],
+
+  "Java Developer": [
+    "Explain JVM, JRE and JDK.",
+    "What is the difference between an interface and abstract class?",
+    "Explain Java garbage collection.",
+    "What is the Java Collections Framework?",
+    "What is multithreading in Java?",
+  ],
+
+  "Cloud Engineer": [
+    "What is the difference between IaaS, PaaS and SaaS?",
+    "Explain availability zones.",
+    "What is autoscaling?",
+    "How would you design a highly available application?",
+    "What is a VPC?",
+  ],
+
+  "Cyber Security": [
+    "What is the difference between authentication and authorization?",
+    "What is SQL injection?",
+    "Explain the principle of least privilege.",
+    "What is encryption?",
+    "What is a firewall?",
+  ],
+
+  "Machine Learning Engineer": [
+    "Explain the machine learning pipeline.",
+    "What is model drift?",
+    "How do you evaluate a classification model?",
+    "What is feature scaling?",
+    "Explain precision versus recall.",
+  ],
+};
+
+const HR_Q = [
+  "Tell me about yourself.",
+  "What are your greatest strengths?",
+  "What is one weakness you are working on?",
+  "Why should we hire you?",
+  "Where do you see yourself in five years?",
+];
+
+const BEHAVIORAL_Q = [
+  "Tell me about a difficult problem you solved.",
+  "Describe a time you worked under pressure.",
+  "Tell me about a conflict with a teammate.",
+  "Describe a failure and what you learned.",
+  "Tell me about a time you showed leadership.",
+];
+
+/* ============================================================
+AUTH CONTEXT
+============================================================ */
+
+const AuthContext = createContext(null);
+
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("career_ai_user");
+
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const login = (userData) => {
+    setUser(userData);
+
+    localStorage.setItem("career_ai_user", JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("career_ai_user");
+  };
+
+  const value = useMemo(
+    () => ({
+      user,
+      login,
+      logout,
+    }),
+    [user],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function useAuth() {
+  return useContext(AuthContext);
+}
+
+/* ============================================================
+THEME MODE CONTEXT
+============================================================ */
+
+const ThemeModeContext = createContext(null);
+
+function ThemeModeProvider({ children }) {
+  const [mode, setMode] = useState(() => {
+    return localStorage.getItem("career_ai_theme") || "light";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("career_ai_theme", mode);
+  }, [mode]);
+
+  const theme = useMemo(() => buildTheme(mode), [mode]);
+
+  const value = useMemo(
+    () => ({
+      mode,
+      setMode,
+      toggleMode: () => {
+        setMode((current) => (current === "light" ? "dark" : "light"));
+      },
+    }),
+    [mode],
+  );
+
+  return (
+    <ThemeModeContext.Provider value={value}>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </MuiThemeProvider>
+    </ThemeModeContext.Provider>
+  );
+}
+
+function useThemeMode() {
+  return useContext(ThemeModeContext);
+}
+
+/* ============================================================
+UTILITY FUNCTIONS
+============================================================ */
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* ============================================================
+RESUME ANALYSIS API
+============================================================ */
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "https://mycareerai.click";
+
+const HEALTH_URL = `${API_BASE_URL}/health`;
+
+const PREDICT_URL = `${API_BASE_URL}/predict`;
+
+async function checkBackendHealth() {
+  const response = await fetch(HEALTH_URL, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Backend health check failed (${response.status})`);
+  }
+
+  const data = await response.json();
+
+  if (data.model_loaded === false) {
+    throw new Error("Backend is running, but the ML model is not loaded.");
+  }
+
+  return data;
+}
+
+async function analyzeResumeText(file) {
+  if (!file) {
+    throw new Error("Please select a resume PDF.");
+  }
+
+  if (
+    file.type !== "application/pdf" &&
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
+    throw new Error("Only PDF files are supported.");
+  }
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error("File is too large. Maximum size is 5 MB.");
+  }
+
+  await checkBackendHealth();
+
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response = await fetch(PREDICT_URL, {
+    method: "POST",
+    body: formData,
+  });
+
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(
+      `Backend returned an invalid response (${response.status}).`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || data?.error || `Prediction failed (${response.status}).`,
+    );
+  }
+
+  if (data.success === false) {
+    throw new Error(data.message || data.error || "Resume analysis failed.");
+  }
+  return data;
+}
+
+/* ============================================================
+PDF EXPORT
+============================================================ */
+
+async function exportNodeToPdf(node, fileName = "resume-analysis.pdf") {
+  if (!node) {
+    throw new Error("Report element was not found.");
+  }
+
+  const canvas = await html2canvas(node, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+  });
+
+  const imageData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "mm", "a4");
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const imageWidth = pageWidth;
+
+  const imageHeight = (canvas.height * imageWidth) / canvas.width;
+
+  let heightLeft = imageHeight;
+
+  let position = 0;
+
+  pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
+
+  heightLeft -= pageHeight;
+
+  while (heightLeft > 0) {
+    position = heightLeft - imageHeight;
+
+    pdf.addPage();
+
+    pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
+
+    heightLeft -= pageHeight;
+  }
+
+  pdf.save(fileName);
+}
+
+function exportResumeToPdf(form) {
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+
+  const PAGE_WIDTH = 210;
+  const PAGE_HEIGHT = 297;
+  const MARGIN = 18;
+  const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+
+  let y = 20;
+
+  const checkPage = () => {
+    if (y > PAGE_HEIGHT - 20) {
+      pdf.addPage();
+      y = 20;
+    }
+  };
+
+  // Section header: uppercase label + underline, consistent spacing
+  const addSection = (title) => {
+    y += 6;
+    checkPage();
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(title.toUpperCase(), MARGIN, y);
+    y += 2;
+    pdf.setDrawColor(30, 41, 59);
+    pdf.setLineWidth(0.4);
+    pdf.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
+    y += 6;
+  };
+
+  // Plain paragraph text, left aligned, wraps within margin
+  const addText = (text, fontSize = 10, lineHeight = 5) => {
+    if (!text || !String(text).trim()) return;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(fontSize);
+    pdf.setTextColor(51, 65, 85);
+    const lines = pdf.splitTextToSize(String(text).trim(), CONTENT_WIDTH);
+    lines.forEach((line) => {
+      checkPage();
+      pdf.text(line, MARGIN, y);
+      y += lineHeight;
+    });
+    y += 2;
+  };
+
+  // Bullet list, consistent indent for bullet + text
+  const addBullets = (text, fontSize = 10, lineHeight = 5) => {
+    if (!text || !String(text).trim()) return;
+    const items = String(text).split("\n").map((i) => i.trim()).filter(Boolean);
+    const BULLET_X = MARGIN;
+    const TEXT_X = MARGIN + 5;
+    const BULLET_WIDTH = CONTENT_WIDTH - 5;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(fontSize);
+    pdf.setTextColor(51, 65, 85);
+
+    items.forEach((item) => {
+      const cleanItem = item.replace(/^[-•*]\s*/, "");
+      const lines = pdf.splitTextToSize(cleanItem, BULLET_WIDTH);
+      lines.forEach((line, index) => {
+        checkPage();
+        if (index === 0) pdf.text("•", BULLET_X, y);
+        pdf.text(line, TEXT_X, y);
+        y += lineHeight;
+      });
+    });
+    y += 2;
+  };
+
+  // ── HEADER ──────────────────────────────────────
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(26);
+  pdf.setTextColor(15, 23, 42);
+  pdf.text(form.name || "Full Name", MARGIN, y);
+  y += 8;
+
+  const contact = [form.email, form.phone, form.location].filter(Boolean).join("   •   ");
+  if (contact) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(51, 65, 85);
+    pdf.text(contact, MARGIN, y);
+    y += 6;
+  }
+
+  // ── PROFESSIONAL SUMMARY ─────────────────────────
+  if (form.summary) {
+    addSection("Professional Summary");
+    addText(form.summary);
+  }
+
+  // ── SKILLS ───────────────────────────────────────
+  if (form.skills) {
+    addSection("Skills");
+    addText(form.skills);
+  }
+
+  // ── EXPERIENCE ───────────────────────────────────
+  if (form.experience) {
+    addSection("Experience");
+    addBullets(form.experience);
+  }
+
+  // ── EDUCATION ────────────────────────────────────
+  if (form.education) {
+    addSection("Education");
+    addText(form.education);
+  }
+
+  // ── PROJECTS ─────────────────────────────────────
+  if (form.projects) {
+    addSection("Projects");
+    addBullets(form.projects);
+  }
+
+  // ── CERTIFICATIONS ───────────────────────────────
+  if (form.certifications) {
+    addSection("Certifications");
+    addBullets(form.certifications);
+  }
+
+  // ── SAVE ─────────────────────────────────────────
+  const fileName = (form.name || "resume").trim().replace(/[^a-z0-9]/gi, "_").toLowerCase();
+  pdf.save(`${fileName}_resume.pdf`);
+}
+/* ============================================================
+SCORE RING
+============================================================ */
+
+function ScoreRing({ value = 0, size = 110, stroke = 10, label = "Score" }) {
+  const radius = (size - stroke) / 2;
+
+  const circumference = 2 * Math.PI * radius;
+
+  const safeValue = clamp(Number(value) || 0, 0, 100);
+
+  const offset = circumference - (safeValue / 100) * circumference;
+
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        width: size,
+        height: size,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          opacity={0.12}
+        />
+
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography variant="h5" fontWeight={800}>
+          {Math.round(safeValue)}
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+/* ============================================================
+PROTECTED ROUTE
+============================================================ */
+
+function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+/* ============================================================
+LOGIN
+============================================================ */
+
+function Login() {
+  const navigate = useNavigate();
+
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    setError("");
+
+    if (!email || !password) {
+      setError("Please enter email and password.");
+
+      return;
+    }
+
+    login({
+      name: email.split("@")[0] || "User",
+
+      email,
+    });
+
+    navigate("/dashboard");
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 3,
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            p: 4,
+            borderRadius: 4,
+            boxShadow: 4,
+          }}
+        >
+          <Typography variant="h4" fontWeight={800} mb={1}>
+            Welcome Back
+          </Typography>
+
+          <Typography color="text.secondary" mb={3}>
+            Sign in to your Career AI account.
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Stack spacing={2}>
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+            />
+
+            <Button type="submit" variant="contained" size="large" fullWidth>
+              Login
+            </Button>
+          </Stack>
+
+          <Typography mt={3} textAlign="center">
+            Don't have an account? <Link to="/signup">Sign up</Link>
+          </Typography>
+        </Box>
+      </Container>
+    </Box>
+  );
+}
+
+/* ============================================================
+SIGNUP
+============================================================ */
+
+function Signup() {
+  const navigate = useNavigate();
+
+  const { login } = useAuth();
+
+  const [name, setName] = useState("");
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    setError("");
+
+    if (!name || !email || !password) {
+      setError("Please fill all fields.");
+
+      return;
+    }
+
+    login({
+      name,
+      email,
+    });
+
+    navigate("/dashboard");
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 3,
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            p: 4,
+            borderRadius: 4,
+            boxShadow: 4,
+          }}
+        >
+          <Typography variant="h4" fontWeight={800} mb={1}>
+            Create Account
+          </Typography>
+
+          <Typography color="text.secondary" mb={3}>
+            Start your AI-powered career journey.
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Stack spacing={2}>
+            <TextField
+              label="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+            />
+
+            <Button type="submit" variant="contained" size="large" fullWidth>
+              Create Account
+            </Button>
+          </Stack>
+
+          <Typography mt={3} textAlign="center">
+            Already have an account? <Link to="/login">Login</Link>
+          </Typography>
+        </Box>
+      </Container>
+    </Box>
+  );
+}
+
+/* ============================================================
+LANDING PAGE
+============================================================ */
+
+function Landing() {
+  const navigate = useNavigate();
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        overflow: "hidden",
+      }}
+    >
+      <AppBar position="static" color="transparent" elevation={0}>
+        <Toolbar
+          sx={{
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography variant="h6" fontWeight={800}>
+            Career AI
+          </Typography>
+
+          <Stack direction="row" spacing={1}>
+            <Button onClick={() => navigate("/login")}>Login</Button>
+
+            <Button variant="contained" onClick={() => navigate("/signup")}>
+              Get Started
+            </Button>
+          </Stack>
+        </Toolbar>
+      </AppBar>
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: {
+            xs: 8,
+            md: 14,
+          },
+        }}
+      >
+        <Grid container spacing={6} alignItems="center">
+          <Grid item xs={12} md={7}>
+            <Typography
+              variant="h1"
+              sx={{
+                fontSize: {
+                  xs: "2.8rem",
+                  md: "4.8rem",
+                },
+                lineHeight: 1.05,
+              }}
+            >
+              Build your
+              <br />
+              <span className="gradient-text">career with AI</span>
+            </Typography>
+
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{
+                mt: 3,
+                maxWidth: 650,
+                lineHeight: 1.7,
+              }}
+            >
+              Analyze your resume, discover the best career opportunities, build
+              stronger resumes, and practice interviews with AI-powered tools.
+            </Typography>
+
+            <Stack
+              direction={{
+                xs: "column",
+                sm: "row",
+              }}
+              spacing={2}
+              sx={{ mt: 4 }}
+            >
+              <Button
+                size="large"
+                variant="contained"
+                endIcon={<MdArrowForward />}
+                onClick={() => navigate("/signup")}
+              >
+                Start Your Journey
+              </Button>
+
+              <Button
+                size="large"
+                variant="outlined"
+                onClick={() => navigate("/login")}
+              >
+                Sign In
+              </Button>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={12} md={5}>
+            <Box
+              sx={{
+                p: 4,
+                borderRadius: 6,
+                background:
+                  "linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12))",
+                border: "1px solid rgba(124,58,237,.15)",
+              }}
+            >
+              <MdAutoAwesome size={72} />
+
+              <Typography variant="h5" fontWeight={800} mt={2}>
+                AI Career Intelligence
+              </Typography>
+
+              <Typography color="text.secondary" mt={1}>
+                Turn your resume into actionable career insights and
+                personalized recommendations.
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
+  );
+}
+
+/* ============================================================
+DASHBOARD LAYOUT
+============================================================ */
+
+function DashboardLayout() {
+  const { user, logout } = useAuth();
+
+  const { mode, toggleMode } = useThemeMode();
+
+  const navigate = useNavigate();
+
+  const location = useLocation();
+
+  const isMobile = useMediaQuery("(max-width:900px)");
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const [profileAnchor, setProfileAnchor] = useState(null);
+
+  const menuItems = [
+    {
+      label: "Dashboard",
+      path: "/dashboard",
+      icon: <MdSpaceDashboard />,
+    },
+
+    {
+      label: "Analyze Resume",
+      path: "/dashboard/analyze",
+      icon: <MdDescription />,
+    },
+
+    {
+      label: "Resume Builder",
+      path: "/dashboard/resume-builder",
+      icon: <MdEdit />,
+    },
+
+    {
+      label: "Interview",
+      path: "/dashboard/interview",
+      icon: <MdMic />,
+    },
+
+    {
+      label: "Profile",
+      path: "/dashboard/profile",
+      icon: <MdPerson />,
+    },
+
+    {
+      label: "Settings",
+      path: "/dashboard/settings",
+      icon: <MdSettings />,
+    },
+  ];
+
+  const drawerWidth = 270;
+
+  const handleNavigate = (path) => {
+    navigate(path);
+
+    if (isMobile) {
+      setDrawerOpen(false);
+    }
+  };
+
+  const drawerContent = (
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Box
+        sx={{
+          p: 3,
+          pb: 2,
+        }}
+      >
+        <Typography variant="h5" fontWeight={800} className="gradient-text">
+          Career AI
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary">
+          AI Career Intelligence
+        </Typography>
+      </Box>
+
+      <Divider />
+
+      <List
+        sx={{
+          px: 1.5,
+          py: 2,
+        }}
+      >
+        {menuItems.map((item) => {
+          const active =
+            location.pathname === item.path ||
+            (item.path !== "/dashboard" &&
+              location.pathname.startsWith(item.path));
+
+          return (
+            <ListItemButton
+              key={item.path}
+              selected={active}
+              onClick={() => handleNavigate(item.path)}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+
+                "&.Mui-selected": {
+                  background:
+                    "linear-gradient(120deg, rgba(37,99,235,.14), rgba(124,58,237,.14))",
+
+                  color: brandColors.primary,
+
+                  "&:hover": {
+                    background:
+                      "linear-gradient(120deg, rgba(37,99,235,.18), rgba(124,58,237,.18))",
+                  },
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 42,
+                  color: active ? brandColors.primary : "inherit",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          );
+        })}
+      </List>
+
+      <Box sx={{ flex: 1 }} />
+
+      <Box
+        sx={{
+          p: 2,
+        }}
+      >
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 3,
+            background:
+              mode === "dark" ? "rgba(255,255,255,.04)" : "rgba(15,23,42,.035)",
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              {mode === "dark" ? <MdDarkMode /> : <MdLightMode />}
+
+              <Typography variant="body2">
+                {mode === "dark" ? "Dark mode" : "Light mode"}
+              </Typography>
+            </Stack>
+
+            <Switch
+              checked={mode === "dark"}
+              onChange={toggleMode}
+              size="small"
+            />
+          </Stack>
+        </Box>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+      }}
+    >
+      {isMobile && (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: drawerWidth,
+            flexShrink: 0,
+
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              boxSizing: "border-box",
+              borderRight: "1px solid rgba(15,23,42,.08)",
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <AppBar
+          position="sticky"
+          color="inherit"
+          elevation={0}
+          sx={{
+            borderBottom: "1px solid rgba(15,23,42,.08)",
+            backdropFilter: "blur(16px)",
+          }}
+        >
+          <Toolbar>
+            {isMobile && (
+              <IconButton
+                edge="start"
+                onClick={() => setDrawerOpen(true)}
+                sx={{ mr: 1 }}
+              >
+                <MdMenu />
+              </IconButton>
+            )}
+
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Welcome back
+              </Typography>
+
+              <Typography fontWeight={700}>{user?.name || "User"}</Typography>
+            </Box>
+
+            <IconButton>
+              <Badge color="error" variant="dot">
+                <MdNotifications />
+              </Badge>
+            </IconButton>
+
+            <IconButton
+              onClick={(event) => setProfileAnchor(event.currentTarget)}
+              sx={{ ml: 1 }}
+            >
+              <Avatar
+                sx={{
+                  width: 38,
+                  height: 38,
+                  background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+                }}
+              >
+                {(user?.name || "U").charAt(0).toUpperCase()}
+              </Avatar>
+            </IconButton>
+
+            <Menu
+              anchorEl={profileAnchor}
+              open={Boolean(profileAnchor)}
+              onClose={() => setProfileAnchor(null)}
+            >
+              <MenuItem
+                onClick={() => {
+                  setProfileAnchor(null);
+                  navigate("/dashboard/profile");
+                }}
+              >
+                <ListItemIcon>
+                  <MdPerson />
+                </ListItemIcon>
+                Profile
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => {
+                  setProfileAnchor(null);
+                  navigate("/dashboard/settings");
+                }}
+              >
+                <ListItemIcon>
+                  <MdSettings />
+                </ListItemIcon>
+                Settings
+              </MenuItem>
+
+              <Divider />
+
+              <MenuItem
+                onClick={() => {
+                  setProfileAnchor(null);
+                  logout();
+                  navigate("/login");
+                }}
+              >
+                <ListItemIcon>
+                  <MdLogout />
+                </ListItemIcon>
+                Logout
+              </MenuItem>
+            </Menu>
+          </Toolbar>
+        </AppBar>
+
+        <Box
+          component="main"
+          sx={{
+            p: {
+              xs: 2,
+              md: 4,
+            },
+
+            maxWidth: 1600,
+            mx: "auto",
+          }}
+        >
+          <Outlet />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+/* ============================================================
+DASHBOARD
+============================================================ */
+
+function Dashboard() {
+  const navigate = useNavigate();
+
+  const { user } = useAuth();
+
+  const stats = [
+    {
+      label: "Resume Score",
+      value: "—",
+      icon: <MdDescription />,
+      color: brandColors.primary,
+    },
+
+    {
+      label: "Career Matches",
+      value: "—",
+      icon: <MdWorkOutline />,
+      color: brandColors.secondary,
+    },
+
+    {
+      label: "Interviews",
+      value: "0",
+      icon: <MdMic />,
+      color: brandColors.accent,
+    },
+
+    {
+      label: "Skills Tracked",
+      value: "0",
+      icon: <MdTrendingUp />,
+      color: "#10B981",
+    },
+  ];
+
+  const quickActions = [
+    {
+      title: "Analyze Resume",
+      description: "Upload your resume and discover your best career matches.",
+      icon: <MdDescription size={30} />,
+      path: "/dashboard/analyze",
+    },
+
+    {
+      title: "Build Resume",
+      description: "Create a professional, ATS-friendly resume.",
+      icon: <MdEdit size={30} />,
+      path: "/dashboard/resume-builder",
+    },
+
+    {
+      title: "AI Video Interview",
+      description: "Face a dynamic AI interviewer with camera, microphone, and Bedrock-powered evaluation.",
+      icon: <MdMic size={30} />,
+      path: "/dashboard/ai-interview",
+    },
+  ];
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Hello, {user?.name || "there"} 👋
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Let's take the next step in your career.
+        </Typography>
+      </Box>
+
+      <Grid container spacing={2}>
+        {stats.map((stat) => (
+          <Grid item xs={12} sm={6} lg={3} key={stat.label}>
+            <Box
+              sx={{
+                p: 2.5,
+                borderRadius: 3,
+                background: "background.paper",
+                border: "1px solid rgba(15,23,42,.08)",
+                height: "100%",
+              }}
+            >
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="flex-start"
+              >
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {stat.label}
+                  </Typography>
+
+                  <Typography variant="h4" fontWeight={800} mt={1}>
+                    {stat.value}
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: stat.color,
+                    background: `${stat.color}15`,
+                  }}
+                >
+                  {stat.icon}
+                </Box>
+              </Stack>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Box>
+        <Typography variant="h5" fontWeight={800} mb={2}>
+          Quick Actions
+        </Typography>
+
+        <Grid container spacing={2}>
+          {quickActions.map((action) => (
+            <Grid item xs={12} md={4} key={action.title}>
+              <Box
+                onClick={() => navigate(action.path)}
+                sx={{
+                  p: 3,
+                  height: "100%",
+                  borderRadius: 3,
+                  cursor: "pointer",
+                  border: "1px solid rgba(15,23,42,.08)",
+                  transition: "all .2s ease",
+
+                  "&:hover": {
+                    transform: "translateY(-3px)",
+                    boxShadow: "0 12px 30px rgba(15,23,42,.08)",
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background:
+                      "linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12))",
+                    color: brandColors.primary,
+                    mb: 2,
+                  }}
+                >
+                  {action.icon}
+                </Box>
+
+                <Typography variant="h6" fontWeight={800}>
+                  {action.title}
+                </Typography>
+
+                <Typography color="text.secondary" mt={1}>
+                  {action.description}
+                </Typography>
+
+                <Button sx={{ mt: 2 }} endIcon={<MdArrowForward />}>
+                  Open
+                </Button>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      <Box
+        sx={{
+          p: {
+            xs: 3,
+            md: 4,
+          },
+
+          borderRadius: 4,
+
+          background:
+            "linear-gradient(120deg, rgba(37,99,235,.10), rgba(124,58,237,.12))",
+
+          border: "1px solid rgba(124,58,237,.12)",
+        }}
+      >
+        <Stack
+          direction={{
+            xs: "column",
+            md: "row",
+          }}
+          spacing={3}
+          alignItems={{
+            xs: "flex-start",
+            md: "center",
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={800}>
+              Ready to discover your next career move?
+            </Typography>
+
+            <Typography color="text.secondary" mt={1}>
+              Start with a resume analysis and get AI-powered career
+              recommendations.
+            </Typography>
+          </Box>
+
+          <Button
+            variant="contained"
+            size="large"
+            endIcon={<MdArrowForward />}
+            onClick={() => navigate("/dashboard/analyze")}
+          >
+            Analyze My Resume
+          </Button>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+ANALYZE HUB
+============================================================ */
+
+function AnalyzeHub() {
+  const navigate = useNavigate();
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Resume Analysis
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Upload your resume and let AI identify your strongest career
+          direction.
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          p: {
+            xs: 3,
+            md: 5,
+          },
+
+          borderRadius: 4,
+
+          background:
+            "linear-gradient(135deg, rgba(37,99,235,.10), rgba(124,58,237,.10))",
+
+          border: "1px solid rgba(124,58,237,.14)",
+        }}
+      >
+        <Stack alignItems="center" textAlign="center" spacing={2}>
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+              color: "#fff",
+            }}
+          >
+            <MdAutoAwesome size={40} />
+          </Box>
+
+          <Typography variant="h5" fontWeight={800}>
+            AI Resume Analyzer
+          </Typography>
+
+          <Typography color="text.secondary" maxWidth={650}>
+            Our AI reads your resume, extracts your skills and experience, and
+            predicts the career roles that best match your profile.
+          </Typography>
+
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<MdUploadFile />}
+            onClick={() => navigate("/dashboard/analyze/upload")}
+          >
+            Upload Resume
+          </Button>
+        </Stack>
+      </Box>
+
+      <Grid container spacing={2}>
+        {[
+          {
+            icon: <MdCloudUpload />,
+            title: "Upload",
+            text: "Upload your PDF resume securely.",
+          },
+
+          {
+            icon: <MdAutoAwesome />,
+            title: "Analyze",
+            text: "AI extracts and analyzes your resume.",
+          },
+
+          {
+            icon: <MdTrendingUp />,
+            title: "Discover",
+            text: "See your strongest career matches.",
+          },
+        ].map((item) => (
+          <Grid item xs={12} md={4} key={item.title}>
+            <Box
+              sx={{
+                p: 3,
+                height: "100%",
+                borderRadius: 3,
+                border: "1px solid rgba(15,23,42,.08)",
+              }}
+            >
+              <Box
+                sx={{
+                  fontSize: 32,
+                  color: brandColors.primary,
+                }}
+              >
+                {item.icon}
+              </Box>
+
+              <Typography variant="h6" fontWeight={800} mt={2}>
+                {item.title}
+              </Typography>
+
+              <Typography color="text.secondary" mt={1}>
+                {item.text}
+              </Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+    </Stack>
+  );
+}
+
+/* ============================================================
+UPLOAD RESUME
+============================================================ */
+
+function UploadResume() {
+  const navigate = useNavigate();
+
+  const [file, setFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [backendStatus, setBackendStatus] = useState(null);
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  const validateFile = (selectedFile) => {
+    if (!selectedFile) {
+      return "Please select a PDF resume.";
+    }
+
+    const isPdf =
+      selectedFile.type === "application/pdf" ||
+      selectedFile.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      return "Only PDF files are supported.";
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      return "File is too large. Maximum size is 5 MB.";
+    }
+
+    return "";
+  };
+
+  const handleFile = (selectedFile) => {
+    setError("");
+
+    const validationError = validateFile(selectedFile);
+
+    if (validationError) {
+      setFile(null);
+      setError(validationError);
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
+  const handleInputChange = (event) => {
+    const selectedFile = event.target.files?.[0];
+
+    if (selectedFile) {
+      handleFile(selectedFile);
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(false);
+
+    const droppedFile = event.dataTransfer.files?.[0];
+
+    if (droppedFile) {
+      handleFile(droppedFile);
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(false);
+  };
+
+  const checkHealth = async () => {
+    try {
+      setBackendStatus("checking");
+
+      const response = await fetch(HEALTH_URL);
+
+      if (!response.ok) {
+        throw new Error(`Backend returned ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.model_loaded === false) {
+        throw new Error("Backend is running, but the ML model is not loaded.");
+      }
+
+      setBackendStatus("connected");
+
+      return true;
+    } catch (err) {
+      console.error("Backend health check failed:", err);
+
+      setBackendStatus("error");
+
+      setError(`Cannot connect to backend at ${API_BASE_URL}. ${err.message}`);
+
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    checkHealth();
+  }, []);
+
+  const handleAnalyze = async () => {
+    setError("");
+
+    if (!file) {
+      setError("Please select a PDF resume first.");
+      return;
+    }
+
+    const validationError = validateFile(file);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      /*
+       * Check backend before uploading.
+       */
+      const healthy = await checkHealth();
+
+      if (!healthy) {
+        return;
+      }
+
+      /*
+       * Build multipart request.
+       *
+       * IMPORTANT:
+       * Backend expects:
+       *
+       * request.files["file"]
+       *
+       * Therefore the field name MUST be "file".
+       */
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      const response = await fetch(PREDICT_URL, {
+        method: "POST",
+        body: formData,
+      });
+
+      let data = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          `Backend returned an invalid response (${response.status}).`,
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            `Resume analysis failed (${response.status}).`,
+        );
+      }
+
+      if (data.success === false) {
+        throw new Error(
+          data.message || data.error || "Resume analysis failed.",
+        );
+      }
+
+      /*
+       * Store result locally as a backup.
+       */
+      sessionStorage.setItem("resume_analysis_result", JSON.stringify(data));
+
+      /*
+       * Navigate to result page.
+       *
+       * The actual result is also passed through
+       * React Router state.
+       */
+      navigate("/dashboard/analyze/result", {
+        state: {
+          result: data,
+          fileName: file.name,
+        },
+      });
+    } catch (err) {
+      console.error("Resume analysis error:", err);
+
+      setError(err.message || "Unable to analyze the resume.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) {
+      return "0 Bytes";
+    }
+
+    const mb = bytes / (1024 * 1024);
+
+    return `${mb.toFixed(2)} MB`;
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+          <Button
+            startIcon={<MdArrowBack />}
+            onClick={() => navigate("/dashboard/analyze")}
+          >
+            Back
+          </Button>
+        </Stack>
+
+        <Typography variant="h4" fontWeight={800}>
+          Upload Your Resume
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Upload your resume in PDF format and let our AI analyze your career
+          profile.
+        </Typography>
+      </Box>
+
+      {backendStatus === "connected" && (
+        <Alert severity="success" icon={<MdCheckCircle />}>
+          Backend connected successfully.
+        </Alert>
+      )}
+
+      {backendStatus === "checking" && (
+        <Alert severity="info">Checking AI backend connection...</Alert>
+      )}
+
+      {backendStatus === "error" && (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={checkHealth}>
+              Retry
+            </Button>
+          }
+        >
+          Backend connection failed.
+        </Alert>
+      )}
+
+      {error && (
+        <Alert severity="error" onClose={() => setError("")}>
+          {error}
+        </Alert>
+      )}
+
+      <Box
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragOver}
+        onDragLeave={handleDragLeave}
+        sx={{
+          position: "relative",
+
+          minHeight: 360,
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          p: 4,
+
+          borderRadius: 4,
+
+          border: dragActive
+            ? `2px dashed ${brandColors.primary}`
+            : "2px dashed rgba(100,116,139,.30)",
+
+          background: dragActive ? "rgba(37,99,235,.06)" : "transparent",
+
+          transition: "all .2s ease",
+        }}
+      >
+        <Stack alignItems="center" textAlign="center" spacing={2}>
+          <Box
+            sx={{
+              width: 90,
+              height: 90,
+              borderRadius: "50%",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              background:
+                "linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12))",
+
+              color: brandColors.primary,
+            }}
+          >
+            <MdCloudUpload size={48} />
+          </Box>
+
+          <Typography variant="h5" fontWeight={800}>
+            Drag & Drop Your Resume
+          </Typography>
+
+          <Typography color="text.secondary">
+            or choose a PDF file from your computer
+          </Typography>
+
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<MdUploadFile />}
+          >
+            Choose PDF
+            <input
+              type="file"
+              hidden
+              accept=".pdf,application/pdf"
+              onChange={handleInputChange}
+            />
+          </Button>
+
+          <Typography variant="caption" color="text.secondary">
+            PDF only • Maximum 5 MB
+          </Typography>
+        </Stack>
+      </Box>
+
+      {file && (
+        <Box
+          sx={{
+            p: 3,
+            borderRadius: 3,
+
+            border: "1px solid rgba(15,23,42,.08)",
+          }}
+        >
+          <Stack
+            direction={{
+              xs: "column",
+              sm: "row",
+            }}
+            spacing={2}
+            alignItems={{
+              xs: "flex-start",
+              sm: "center",
+            }}
+          >
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: 2,
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                background: "rgba(37,99,235,.10)",
+
+                color: brandColors.primary,
+              }}
+            >
+              <MdDescription size={28} />
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <Typography
+                fontWeight={700}
+                sx={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {file.name}
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary">
+                {formatFileSize(file.size)}
+              </Typography>
+            </Box>
+
+            <IconButton
+              color="error"
+              onClick={() => {
+                setFile(null);
+                setError("");
+              }}
+            >
+              <MdDelete />
+            </IconButton>
+          </Stack>
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <Button
+          variant="contained"
+          size="large"
+          disabled={!file || loading || backendStatus === "checking"}
+          onClick={handleAnalyze}
+          startIcon={loading ? undefined : <MdAutoAwesome />}
+          sx={{
+            minWidth: 220,
+          }}
+        >
+          {loading ? "Analyzing..." : "Analyze Resume"}
+        </Button>
+      </Box>
+
+      {loading && (
+        <Box>
+          <LinearProgress />
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            textAlign="center"
+            mt={1}
+          >
+            Extracting text and analyzing your resume...
+          </Typography>
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          p: 3,
+          borderRadius: 3,
+
+          background: "rgba(37,99,235,.05)",
+        }}
+      >
+        <Stack direction="row" spacing={2} alignItems="flex-start">
+          <MdLightbulb size={26} color={brandColors.primary} />
+
+          <Box>
+            <Typography fontWeight={700}>For the best results</Typography>
+
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              Use a clear PDF resume containing your skills, education, work
+              experience, projects, and technical knowledge.
+            </Typography>
+          </Box>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+function ResumeResult() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const reportRef = useRef(null);
+
+  const [result, setResult] = useState(location.state?.result || null);
+  const [fileName, setFileName] = useState(location.state?.fileName || "");
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (result) return;
+    try {
+      const saved = sessionStorage.getItem("resume_analysis_result");
+      if (saved) setResult(JSON.parse(saved));
+    } catch (err) {
+      console.error("Unable to restore result:", err);
+    }
+  }, [result]);
+
+  useEffect(() => {
+    if (location.state?.fileName) setFileName(location.state.fileName);
+  }, [location.state]);
+
+  // ── SINGLE-SHEET PDF EXPORT (scales to fit one page) ──
+  const handleExport = async () => {
+    if (!reportRef.current) {
+      setError("Unable to export the result.");
+      return;
+    }
+    setExporting(true);
+    setError("");
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+      const imageData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Scale the whole canvas down to fit within ONE page, no splitting
+      const widthRatio = pageWidth / canvas.width;
+      const heightRatio = pageHeight / canvas.height;
+      const ratio = Math.min(widthRatio, heightRatio);
+
+      const imgWidth = canvas.width * ratio;
+      const imgHeight = canvas.height * ratio;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = 0;
+
+      pdf.addImage(imageData, "PNG", x, y, imgWidth, imgHeight);
+      pdf.save("career-ai-resume-analysis.pdf");
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      setError(err.message || "Failed to export PDF.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (!result) {
+    return (
+      <Stack spacing={3} alignItems="center" sx={{ py: 8 }}>
+        <MdDescription size={64} color={brandColors.primary} />
+        <Typography variant="h5" fontWeight={800}>No Resume Analysis Found</Typography>
+        <Typography color="text.secondary" textAlign="center">
+          Please upload a resume to generate an AI career analysis.
+        </Typography>
+        <Button variant="contained" startIcon={<MdUploadFile />} onClick={() => navigate("/dashboard/analyze/upload")}>
+          Upload Resume
+        </Button>
+      </Stack>
+    );
+  }
+
+  const predictedCareer = result.predicted_career || "Not available";
+  const atsScore = result.ats_score ?? 0;
+  const matchingPercentage = result.matching_percentage ?? 0;
+  const foundSkills = Array.isArray(result.found_skills) ? result.found_skills : [];
+  const missingSkills = Array.isArray(result.missing_skills) ? result.missing_skills : [];
+  const strengths = Array.isArray(result.strengths) ? result.strengths : [];
+  const weaknesses = Array.isArray(result.weaknesses) ? result.weaknesses : [];
+  const suggestions = Array.isArray(result.suggestions) ? result.suggestions : [];
+
+  const top3 = Array.isArray(result.top_3) ? result.top_3 : [];
+  const normalizedTop3 = top3.map((item, index) => ({
+    role: item?.role || `Career ${index + 1}`,
+    fitPercent: item?.skill_fit_percent ?? 0,
+  }));
+
+  return (
+    <Stack spacing={4}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+        <Button startIcon={<MdArrowBack />} onClick={() => navigate("/dashboard/analyze")}>Back</Button>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h4" fontWeight={800}>Resume Analysis Result</Typography>
+          {fileName && <Typography color="text.secondary" mt={0.5}>{fileName}</Typography>}
+        </Box>
+        <Button variant="outlined" startIcon={<MdDownload />} disabled={exporting} onClick={handleExport}>
+          {exporting ? "Exporting..." : "Export PDF"}
+        </Button>
+      </Stack>
+
+      {error && <Alert severity="error" onClose={() => setError("")}>{error}</Alert>}
+
+      <Box ref={reportRef} sx={{ p: { xs: 2, md: 4 }, background: "background.paper" }}>
+
+        {/* Prediction header */}
+        <Box sx={{ p: { xs: 3, md: 5 }, borderRadius: 4,
+          background: "linear-gradient(135deg, rgba(37,99,235,.10), rgba(124,58,237,.10))",
+          border: "1px solid rgba(124,58,237,.12)" }}>
+          <Typography variant="overline" color="primary" fontWeight={800}>AI Career Prediction</Typography>
+          <Typography variant="h3" fontWeight={800} mt={1} sx={{ fontSize: { xs: "2rem", md: "3rem" } }}>
+            {predictedCareer}
+          </Typography>
+          <Typography color="text.secondary" mt={1}>
+            Based on the skills and experience extracted from your resume.
+          </Typography>
+        </Box>
+
+        {/* Score rings */}
+        <Grid container spacing={3} mt={1}>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", textAlign: "center" }}>
+              <Typography fontWeight={700} mb={1}>ATS Score</Typography>
+              <ScoreRing value={atsScore} label="/ 100" />
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", textAlign: "center" }}>
+              <Typography fontWeight={700} mb={1}>Matching Percentage</Typography>
+              <ScoreRing value={matchingPercentage} label={`vs. ${predictedCareer}`} />
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Top career matches */}
+        <Box mt={4}>
+          <Typography variant="h5" fontWeight={800} mb={2}>Top Career Matches</Typography>
+          {normalizedTop3.length === 0 ? (
+            <Alert severity="info">No top career matches were returned by the backend.</Alert>
+          ) : (
+            <Grid container spacing={2}>
+              {normalizedTop3.map((item, index) => (
+                <Grid item xs={12} md={4} key={`${item.role}-${index}`}>
+                  <Box sx={{ p: 3, height: "100%", borderRadius: 3, border: "1px solid rgba(15,23,42,.08)" }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Chip label={`#${index + 1}`} color={index === 0 ? "primary" : "default"} />
+                      <Typography fontWeight={800} color="primary">{item.fitPercent}%</Typography>
+                    </Stack>
+                    <Typography variant="h6" fontWeight={800} mt={3}>{item.role}</Typography>
+                    <Box mt={2}>
+                      <LinearProgress variant="determinate" value={clamp(item.fitPercent, 0, 100)} />
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+
+{/* Skills found / missing */}
+<Grid container spacing={2} mt={2}>
+  <Grid item xs={12} md={6}>
+    <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+      <Typography variant="h6" fontWeight={800} mb={2}>Skills Found</Typography>
+      {foundSkills.length === 0 ? (
+        <Typography color="text.secondary">No skills detected.</Typography>
+      ) : (
+        <Box sx={{ display: "flex", flexWrap: "wrap", mx: -0.5, my: -0.5 }}>
+          {foundSkills.map((skill) => (
+            <Chip
+              key={skill}
+              label={skill}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{
+                m: 0.5,
+                fontWeight: 600,
+                borderRadius: "8px",
+                textTransform: "capitalize",
+              }}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+      <Typography variant="h6" fontWeight={800} mb={2}>Missing Skills</Typography>
+      {missingSkills.length === 0 ? (
+        <Typography color="text.secondary">No major gaps detected.</Typography>
+      ) : (
+        <Box sx={{ display: "flex", flexWrap: "wrap", mx: -0.5, my: -0.5 }}>
+          {missingSkills.map((skill) => (
+            <Chip
+              key={skill}
+              label={skill}
+              color="error"
+              variant="outlined"
+              size="small"
+              sx={{
+                m: 0.5,
+                fontWeight: 600,
+                borderRadius: "8px",
+                textTransform: "capitalize",
+              }}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  </Grid>
+</Grid>
+
+        {/* Strengths / weaknesses */}
+        <Grid container spacing={2} mt={2}>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+              <Typography variant="h6" fontWeight={800} mb={2}>Resume Strength</Typography>
+              <Stack spacing={1}>
+                {strengths.map((s, i) => (
+                  <Stack direction="row" spacing={1} key={i} alignItems="flex-start">
+                    <MdCheckCircle color="#10B981" />
+                    <Typography variant="body2">{s}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+              <Typography variant="h6" fontWeight={800} mb={2}>Weaknesses</Typography>
+              <Stack spacing={1}>
+                {weaknesses.map((w, i) => (
+                  <Stack direction="row" spacing={1} key={i} alignItems="flex-start">
+                    <MdCancel color="#EF4444" />
+                    <Typography variant="body2">{w}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Suggestions */}
+        <Box mt={2}>
+          <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)" }}>
+            <Typography variant="h6" fontWeight={800} mb={2}>Suggested Improvements</Typography>
+            <Stack spacing={1}>
+              {suggestions.map((s, i) => (
+                <Stack direction="row" spacing={1} key={i} alignItems="flex-start">
+                  <MdLightbulb color={brandColors.primary} />
+                  <Typography variant="body2">{s}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        </Box>
+      </Box>
+
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
+        <Button variant="contained" startIcon={<MdUploadFile />} onClick={() => navigate("/dashboard/analyze/upload")}>
+          Analyze Another Resume
+        </Button>
+        <Button variant="outlined" onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
+      </Stack>
+    </Stack>
+  );
+}
+/* ============================================================
+RESUME BUILDER
+============================================================ */
+
+function ResumeBuilder() {
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    summary: "",
+    skills: "",
+    experience: "",
+    education: "",
+    projects: "",
+    certifications: "",
+  });
+
+  const [preview, setPreview] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+  const handlePreview = () => {
+    setPreview(true);
+  };
+
+  const handleReset = () => {
+    setForm({
+      name: "",
+      email: "",
+      phone: "",
+      location: "",
+      summary: "",
+      skills: "",
+      experience: "",
+      education: "",
+      projects: "",
+      certifications: "",
+    });
+
+    setPreview(false);
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Resume Builder
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Build a clean, professional resume using your career information.
+        </Typography>
+      </Box>
+
+      {!preview ? (
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={8}>
+            <Stack spacing={3}>
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Personal Information
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Full Name"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Phone"
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Location"
+                      name="location"
+                      value={form.location}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Professional Summary
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={5}
+                  label="Professional Summary"
+                  name="summary"
+                  value={form.summary}
+                  onChange={handleChange}
+                  placeholder="Write a short professional summary..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Skills
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={4}
+                  label="Skills"
+                  name="skills"
+                  value={form.skills}
+                  onChange={handleChange}
+                  placeholder="Linux, AWS, Docker, Kubernetes, Python..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Experience
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={7}
+                  label="Work Experience"
+                  name="experience"
+                  value={form.experience}
+                  onChange={handleChange}
+                  placeholder="Company, role, responsibilities, achievements..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Education
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={5}
+                  label="Education"
+                  name="education"
+                  value={form.education}
+                  onChange={handleChange}
+                  placeholder="Degree, university, year..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Projects
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={6}
+                  label="Projects"
+                  name="projects"
+                  value={form.projects}
+                  onChange={handleChange}
+                  placeholder="Project name, technologies, description..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Certifications
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={4}
+                  label="Certifications"
+                  name="certifications"
+                  value={form.certifications}
+                  onChange={handleChange}
+                  placeholder="Certification name, organization, year..."
+                />
+              </Box>
+
+              <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button variant="outlined" onClick={handleReset}>
+                  Reset
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={handlePreview}
+                  endIcon={<MdArrowForward />}
+                >
+                  Preview Resume
+                </Button>
+              </Stack>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={12} lg={4}>
+            <Box
+              sx={{
+                p: 3,
+                borderRadius: 3,
+
+                background:
+                  "linear-gradient(135deg, rgba(37,99,235,.08), rgba(124,58,237,.08))",
+              }}
+            >
+              <MdAutoAwesome size={32} color={brandColors.primary} />
+
+              <Typography variant="h6" fontWeight={800} mt={2}>
+                Resume Tips
+              </Typography>
+
+              <Stack spacing={2} mt={2}>
+                {[
+                  "Keep your summary concise and focused.",
+                  "Use measurable achievements where possible.",
+                  "List relevant technical and soft skills.",
+                  "Keep experience descriptions action-oriented.",
+                  "Use keywords related to your target role.",
+                ].map((tip) => (
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    key={tip}
+                    alignItems="flex-start"
+                  >
+                    <MdCheckCircle color={brandColors.primary} />
+
+                    <Typography variant="body2" color="text.secondary">
+                      {tip}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          </Grid>
+        </Grid>
+      ) : (
+        <Stack spacing={3}>
+          <Stack
+            direction={{
+              xs: "column",
+              sm: "row",
+            }}
+            spacing={2}
+            justifyContent="space-between"
+          >
+            <Button
+              startIcon={<MdArrowBack />}
+              onClick={() => setPreview(false)}
+            >
+              Edit Resume
+            </Button>
+
+            <Button
+              variant="contained"
+              startIcon={<MdDownload />}
+              onClick={() => exportResumeToPdf(form)}
+            >
+              Download Resume PDF
+            </Button>
+          </Stack>
+
+          <Box
+            sx={{
+              maxWidth: 900,
+              width: "100%",
+              mx: "auto",
+              p: {
+                xs: 3,
+                md: 6,
+              },
+
+              background: "#fff",
+
+              color: "#111827",
+
+              boxShadow: "0 10px 40px rgba(15,23,42,.12)",
+            }}
+          >
+            <Typography variant="h3" fontWeight={800}>
+              {form.name || "Your Name"}
+            </Typography>
+
+            <Stack direction="row" spacing={2} flexWrap="wrap" mt={1}>
+              {form.email && (
+                <Typography variant="body2">{form.email}</Typography>
+              )}
+
+              {form.phone && (
+                <Typography variant="body2">{form.phone}</Typography>
+              )}
+
+              {form.location && (
+                <Typography variant="body2">{form.location}</Typography>
+              )}
+            </Stack>
+
+            {form.summary && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  PROFESSIONAL SUMMARY
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.summary}
+                </Typography>
+              </Box>
+            )}
+
+            {form.skills && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  SKILLS
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.skills}
+                </Typography>
+              </Box>
+            )}
+
+            {form.experience && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  EXPERIENCE
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.experience}
+                </Typography>
+              </Box>
+            )}
+
+            {form.education && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  EDUCATION
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.education}
+                </Typography>
+              </Box>
+            )}
+
+            {form.certifications && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  CERTIFICATIONS
+                </Typography>
+                <Divider sx={{ my: 1 }} />
+                <Typography sx={{ whiteSpace: "pre-line" }}>
+                  {form.certifications}
+                </Typography>
+              </Box>
+            )}
+
+            {form.projects && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  PROJECTS
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.projects}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Stack>
+      )}
+    </Stack>
+  );
+}
+
+/* ============================================================
+INTERVIEW SETUP
+============================================================ */
+
+function InterviewSetup() {
+  const navigate = useNavigate();
+
+  const [role, setRole] = useState("");
+
+  const [difficulty, setDifficulty] = useState("Intermediate");
+
+  const [questionCount, setQuestionCount] = useState(5);
+
+  const handleStart = () => {
+    if (!role.trim()) {
+      return;
+    }
+
+    sessionStorage.setItem(
+      "interview_setup",
+      JSON.stringify({
+        role,
+        difficulty,
+        questionCount,
+      }),
+    );
+
+    navigate("/dashboard/interview/session");
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          AI Interview Practice
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Configure your mock interview and practice questions tailored to your
+          target role.
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          maxWidth: 720,
+          width: "100%",
+          mx: "auto",
+          p: {
+            xs: 3,
+            md: 5,
+          },
+
+          borderRadius: 4,
+
+          border: "1px solid rgba(15,23,42,.08)",
+        }}
+      >
+        <Stack spacing={3}>
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+
+              color: "#fff",
+            }}
+          >
+            <MdMic size={34} />
+          </Box>
+
+          <TextField
+            fullWidth
+            label="Target Role"
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+            placeholder="e.g. DevOps Engineer"
+          />
+
+          <TextField
+            select
+            fullWidth
+            label="Difficulty"
+            value={difficulty}
+            onChange={(event) => setDifficulty(event.target.value)}
+          >
+            <MenuItem value="Beginner">Beginner</MenuItem>
+
+            <MenuItem value="Intermediate">Intermediate</MenuItem>
+
+            <MenuItem value="Advanced">Advanced</MenuItem>
+          </TextField>
+
+          <TextField
+            select
+            fullWidth
+            label="Number of Questions"
+            value={questionCount}
+            onChange={(event) => setQuestionCount(Number(event.target.value))}
+          >
+            <MenuItem value={5}>5 Questions</MenuItem>
+
+            <MenuItem value={10}>10 Questions</MenuItem>
+
+            <MenuItem value={15}>15 Questions</MenuItem>
+          </TextField>
+
+          <Button
+            variant="contained"
+            size="large"
+            disabled={!role.trim()}
+            onClick={handleStart}
+            endIcon={<MdArrowForward />}
+          >
+            Start Interview
+          </Button>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+INTERVIEW SESSION
+============================================================ */
+
+function InterviewSession() {
+  const navigate = useNavigate();
+
+  const [setup, setSetup] = useState(null);
+
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const [answer, setAnswer] = useState("");
+
+  const [answers, setAnswers] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("interview_setup");
+
+      if (saved) {
+        setSetup(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error("Unable to load interview setup:", error);
+    }
+  }, []);
+
+  const questions = [
+    "Tell me about yourself and your professional background.",
+
+    "What are your strongest technical skills?",
+
+    "Describe a challenging technical problem you solved.",
+
+    "How do you troubleshoot a production issue?",
+
+    "How do you continuously improve your technical knowledge?",
+
+    "Describe a project where you worked with a team.",
+
+    "How do you handle pressure during a production incident?",
+
+    "What is your approach to automation and reducing manual work?",
+
+    "How do you monitor application and infrastructure health?",
+
+    "Why are you interested in this role?",
+  ];
+
+  const totalQuestions = setup?.questionCount || 5;
+
+  const activeQuestions = questions.slice(0, totalQuestions);
+
+  const question = activeQuestions[currentQuestion] || questions[0];
+
+  const handleNext = () => {
+    const updatedAnswers = [
+      ...answers,
+      {
+        question,
+        answer,
+      },
+    ];
+
+    setAnswers(updatedAnswers);
+
+    setAnswer("");
+
+    if (currentQuestion >= activeQuestions.length - 1) {
+      sessionStorage.setItem(
+        "interview_answers",
+        JSON.stringify(updatedAnswers),
+      );
+
+      navigate("/dashboard/interview/result");
+
+      return;
+    }
+
+    setCurrentQuestion((previous) => previous + 1);
+  };
+
+  if (!setup) {
+    return (
+      <Stack spacing={3} alignItems="center" sx={{ py: 8 }}>
+        <CircularProgress />
+
+        <Typography color="text.secondary">Loading interview...</Typography>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Interview Session
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          {setup.role} • {setup.difficulty}
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          maxWidth: 850,
+          width: "100%",
+          mx: "auto",
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" mb={1}>
+          <Typography variant="body2" color="text.secondary">
+            Question {currentQuestion + 1} of {activeQuestions.length}
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary">
+            {Math.round(((currentQuestion + 1) / activeQuestions.length) * 100)}
+            %
+          </Typography>
+        </Stack>
+
+        <LinearProgress
+          variant="determinate"
+          value={((currentQuestion + 1) / activeQuestions.length) * 100}
+        />
+
+        <Box
+          sx={{
+            mt: 3,
+            p: {
+              xs: 3,
+              md: 5,
+            },
+
+            borderRadius: 4,
+
+            border: "1px solid rgba(15,23,42,.08)",
+          }}
+        >
+          <Chip label={setup.role} color="primary" size="small" />
+
+          <Typography variant="h5" fontWeight={800} mt={3}>
+            {question}
+          </Typography>
+
+          <TextField
+            fullWidth
+            multiline
+            minRows={10}
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            placeholder="Type your answer here..."
+            sx={{ mt: 3 }}
+          />
+
+          <Stack direction="row" justifyContent="flex-end" mt={3}>
+            <Button
+              variant="contained"
+              disabled={!answer.trim()}
+              onClick={handleNext}
+              endIcon={<MdArrowForward />}
+            >
+              {currentQuestion >= activeQuestions.length - 1
+                ? "Finish Interview"
+                : "Next Question"}
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+INTERVIEW RESULT
+============================================================ */
+
+function InterviewResult() {
+  const navigate = useNavigate();
+
+  const [answers, setAnswers] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("interview_answers");
+
+      if (saved) {
+        setAnswers(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error("Unable to load interview answers:", error);
+    }
+  }, []);
+
+  const calculateScore = () => {
+    if (!answers.length) {
+      return 0;
+    }
+
+    const answered = answers.filter(
+      (item) => item.answer && item.answer.trim().length > 20,
+    ).length;
+
+    return Math.round((answered / answers.length) * 100);
+  };
+
+  const score = calculateScore();
+
+  const getFeedback = () => {
+    if (score >= 80) {
+      return {
+        title: "Excellent performance!",
+        text: "Your answers show strong preparation and confidence. Continue practicing role-specific questions to improve further.",
+      };
+    }
+
+    if (score >= 60) {
+      return {
+        title: "Good performance!",
+        text: "You have a solid foundation. Focus on providing more detailed examples and measurable achievements.",
+      };
+    }
+
+    return {
+      title: "Keep practicing!",
+      text: "Practice explaining your technical experience with clear examples, actions, and results.",
+    };
+  };
+
+  const feedback = getFeedback();
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Interview Result
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Review your interview answers and identify areas for improvement.
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          maxWidth: 800,
+          width: "100%",
+          mx: "auto",
+        }}
+      >
+        <Box
+          sx={{
+            p: {
+              xs: 3,
+              md: 5,
+            },
+
+            borderRadius: 4,
+
+            background:
+              "linear-gradient(135deg, rgba(37,99,235,.10), rgba(124,58,237,.10))",
+
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="overline" color="primary" fontWeight={800}>
+            Interview Score
+          </Typography>
+
+          <Typography variant="h1" fontWeight={900} mt={1}>
+            {score}%
+          </Typography>
+
+          <Typography variant="h5" fontWeight={800} mt={1}>
+            {feedback.title}
+          </Typography>
+
+          <Typography color="text.secondary" mt={1} maxWidth={600} mx="auto">
+            {feedback.text}
+          </Typography>
+        </Box>
+
+        <Box mt={4}>
+          <Typography variant="h5" fontWeight={800} mb={2}>
+            Your Answers
+          </Typography>
+
+          {answers.length === 0 ? (
+            <Alert severity="info">No interview answers were found.</Alert>
+          ) : (
+            <Stack spacing={2}>
+              {answers.map((item, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+
+                    border: "1px solid rgba(15,23,42,.08)",
+                  }}
+                >
+                  <Typography variant="subtitle1" fontWeight={800}>
+                    {index + 1}. {item.question}
+                  </Typography>
+
+                  <Typography
+                    color="text.secondary"
+                    mt={2}
+                    sx={{
+                      whiteSpace: "pre-line",
+                    }}
+                  >
+                    {item.answer || "No answer provided."}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        <Stack
+          direction={{
+            xs: "column",
+            sm: "row",
+          }}
+          spacing={2}
+          justifyContent="center"
+          mt={4}
+        >
+          <Button
+            variant="contained"
+            startIcon={<MdRefresh />}
+            onClick={() => navigate("/dashboard/interview")}
+          >
+            Practice Again
+          </Button>
+
+          <Button variant="outlined" onClick={() => navigate("/dashboard")}>
+            Dashboard
+          </Button>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+PROFILE
+============================================================ */
+
+function Profile() {
+  const { user } = useAuth();
+
+  const [name, setName] = useState(user?.name || "");
+
+  const [email, setEmail] = useState(user?.email || "");
+
+  const [phone, setPhone] = useState(user?.phone || "");
+
+  const [location, setLocation] = useState(user?.location || "");
+
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    const profile = {
+      name,
+      email,
+      phone,
+      location,
+    };
+
+    localStorage.setItem("career_ai_profile", JSON.stringify(profile));
+
+    setSaved(true);
+
+    setTimeout(() => {
+      setSaved(false);
+    }, 2500);
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Profile
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Manage your personal career information.
+        </Typography>
+      </Box>
+
+      {saved && (
+        <Alert severity="success" icon={<MdCheckCircle />}>
+          Profile updated successfully.
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          maxWidth: 800,
+          width: "100%",
+          mx: "auto",
+          p: {
+            xs: 3,
+            md: 5,
+          },
+
+          borderRadius: 4,
+
+          border: "1px solid rgba(15,23,42,.08)",
+        }}
+      >
+        <Stack spacing={3} alignItems="center">
+          <Avatar
+            sx={{
+              width: 96,
+              height: 96,
+              fontSize: 36,
+
+              background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+            }}
+          >
+            {(name || "U").charAt(0).toUpperCase()}
+          </Avatar>
+
+          <Typography variant="h5" fontWeight={800}>
+            {name || "Your Profile"}
+          </Typography>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Full Name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Phone"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Location"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+              />
+            </Grid>
+          </Grid>
+
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              variant="contained"
+              startIcon={<MdSave />}
+              onClick={handleSave}
+            >
+              Save Profile
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+SETTINGS
+============================================================ */
+
+function Settings() {
+  const { mode, toggleMode } = useThemeMode();
+
+  const [emailNotifications, setEmailNotifications] = useState(true);
+
+  const [interviewReminders, setInterviewReminders] = useState(true);
+
+  const [resumeSuggestions, setResumeSuggestions] = useState(true);
+
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem("career_ai_settings");
+
+      if (!savedSettings) {
+        return;
+      }
+
+      const settings = JSON.parse(savedSettings);
+
+      if (typeof settings.emailNotifications === "boolean") {
+        setEmailNotifications(settings.emailNotifications);
+      }
+
+      if (typeof settings.interviewReminders === "boolean") {
+        setInterviewReminders(settings.interviewReminders);
+      }
+
+      if (typeof settings.resumeSuggestions === "boolean") {
+        setResumeSuggestions(settings.resumeSuggestions);
+      }
+    } catch (error) {
+      console.error("Unable to load settings:", error);
+    }
+  }, []);
+
+  const handleSave = () => {
+    localStorage.setItem(
+      "career_ai_settings",
+      JSON.stringify({
+        emailNotifications,
+        interviewReminders,
+        resumeSuggestions,
+      }),
+    );
+
+    setSaved(true);
+
+    setTimeout(() => {
+      setSaved(false);
+    }, 2500);
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Settings
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Customize your Career AI experience.
+        </Typography>
+      </Box>
+
+      {saved && (
+        <Alert severity="success" icon={<MdCheckCircle />}>
+          Settings saved successfully.
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          maxWidth: 800,
+          width: "100%",
+          mx: "auto",
+        }}
+      >
+        <Stack spacing={2}>
+          <Box
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              border: "1px solid rgba(15,23,42,.08)",
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Stack direction="row" spacing={2} alignItems="center">
+                {mode === "dark" ? (
+                  <MdDarkMode size={25} />
+                ) : (
+                  <MdLightMode size={25} />
+                )}
+
+                <Box>
+                  <Typography fontWeight={800}>Appearance</Typography>
+
+                  <Typography variant="body2" color="text.secondary">
+                    Switch between light and dark mode.
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Switch checked={mode === "dark"} onChange={toggleMode} />
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              border: "1px solid rgba(15,23,42,.08)",
+            }}
+          >
+            <Typography variant="h6" fontWeight={800} mb={2}>
+              Notifications
+            </Typography>
+
+            <Stack spacing={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={emailNotifications}
+                    onChange={(event) =>
+                      setEmailNotifications(event.target.checked)
+                    }
+                  />
+                }
+                label="Email notifications"
+              />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={interviewReminders}
+                    onChange={(event) =>
+                      setInterviewReminders(event.target.checked)
+                    }
+                  />
+                }
+                label="Interview reminders"
+              />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={resumeSuggestions}
+                    onChange={(event) =>
+                      setResumeSuggestions(event.target.checked)
+                    }
+                  />
+                }
+                label="Resume recommendations"
+              />
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              variant="contained"
+              startIcon={<MdSave />}
+              onClick={handleSave}
+            >
+              Save Settings
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+ERROR FALLBACK
+============================================================ */
+
+function ErrorFallback() {
+  const navigate = useNavigate();
+
+  return (
+    <Box
+      sx={{
+        minHeight: "60vh",
+
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+
+        p: 3,
+      }}
+    >
+      <Stack spacing={2} alignItems="center" textAlign="center">
+        <Box
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+
+            background: "rgba(239,68,68,.10)",
+
+            color: "#EF4444",
+          }}
+        >
+          <MdError size={42} />
+        </Box>
+
+        <Typography variant="h5" fontWeight={800}>
+          Something went wrong
+        </Typography>
+
+        <Typography color="text.secondary">
+          Please try again or return to the dashboard.
+        </Typography>
+
+        <Button variant="contained" onClick={() => navigate("/dashboard")}>
+          Go to Dashboard
+        </Button>
+      </Stack>
+    </Box>
+  );
+}
+
+/* ============================================================
+PART 5 ENDS HERE
+============================================================ */
+/* ============================================================
+MAIN APP
+============================================================ */
+
+function App() {
+  return (
+    <ThemeModeProvider>
+      <AuthProvider>
+        <CssBaseline />
+
+        <GlobalStyleTag />
+
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeModeProvider>
+  );
+}
+
+/* ============================================================
+APP ROUTES
+============================================================ */
+
+function AppRoutes() {
+  const location = useLocation();
+
+  useGoogleFonts();
+
+  return (
+    <Routes>
+      {/* ======================================================
+      PUBLIC ROUTES
+  ====================================================== */}
+
+      <Route path="/" element={<Landing />} />
+
+      <Route path="/login" element={<Login />} />
+
+      <Route path="/signup" element={<Signup />} />
+
+      {/* ======================================================
+      DASHBOARD
+  ====================================================== */}
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard home */}
+
+        <Route index element={<Dashboard />} />
+
+        {/* ====================================================
+        RESUME ANALYZER
+    ==================================================== */}
+
+        <Route path="analyze" element={<AnalyzeHub />} />
+
+        <Route path="analyze/upload" element={<UploadResume />} />
+
+        <Route path="analyze/result" element={<ResumeResult />} />
+
+        {/* ====================================================
+        RESUME BUILDER
+    ==================================================== */}
+
+        <Route path="resume-builder" element={<ResumeBuilder />} />
+
+        {/* ====================================================
+        INTERVIEW
+    ==================================================== */}
+
+        <Route path="interview" element={<InterviewSetup />} />
+
+        <Route path="interview/session" element={<InterviewSession />} />
+
+        <Route path="interview/result" element={<InterviewResult />} />
+
+        <Route path="ai-interview" element={<AIVideoInterview />} />
+
+        {/* ====================================================
+        PROFILE
+    ==================================================== */}
+
+        <Route path="profile" element={<Profile />} />
+
+        {/* ====================================================
+        SETTINGS
+    ==================================================== */}
+
+        <Route path="settings" element={<Settings />} />
+      </Route>
+
+      {/* ======================================================
+      FALLBACK ROUTE
+  ====================================================== */}
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+/* ============================================================
+FINAL EXPORT
+============================================================ */
+
+export default App;
+================ src/services/api.js ================
+import { API_BASE_URL } from "../config/config";
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {}),
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Request failed with status ${response.status}`);
+  }
+  return data;
+}
+
+export function startAIInterview(payload) {
+  return request("/api/v1/interview/start", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function submitInterviewAnswer(payload) {
+  return request("/api/v1/interview/answer", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function completeAIInterview(payload) {
+  return request("/api/v1/interview/complete", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getInterviewSession(sessionId) {
+  return request(`/api/v1/interview/session/${encodeURIComponent(sessionId)}`);
+}
+
+export async function uploadInterviewMedia({ sessionId, questionNumber, blob }) {
+  const formData = new FormData();
+  formData.append("session_id", sessionId);
+  formData.append("question_number", String(questionNumber));
+  formData.append("media", blob, `answer-${questionNumber}.webm`);
+
+  return request("/api/v1/interview/media", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function getTranscription(jobName) {
+  return request(`/api/v1/interview/transcription/${encodeURIComponent(jobName)}`);
+}
+
+export function getBackendHealth() {
+  return request("/health");
+}
+================ src/config/config.js ================
+const runtimeConfig = window.__APP_CONFIG__ || {};
+
+export const API_BASE_URL =
+  runtimeConfig.API_BASE_URL ||
+  process.env.REACT_APP_API_BASE_URL ||
+  "http://localhost:5000";
+
+export const APP_ENV = runtimeConfig.APP_ENV || process.env.REACT_APP_ENV || "development";
+================ app.py ================
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import json
+import uuid
+import pickle, re, pytesseract
+from pdf2image import convert_from_path
+import tempfile, os
+from datetime import datetime, timezone
+
+try:
+    import boto3
+except ImportError:
+    boto3 = None
+
+app = Flask(__name__)
+CORS(app, origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","))
+
+save_path = os.getenv("MODEL_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "models"))
+model = pickle.load(open(f"{save_path}/career_model.pkl", "rb"))
+tfidf = pickle.load(open(f"{save_path}/tfidf_vectorizer.pkl", "rb"))
+le    = pickle.load(open(f"{save_path}/label_encoder.pkl", "rb"))
+print("Model loaded!")
+
+SKILL_BANK = [
+    "javascript","react","node.js","python","java","sql","aws","docker",
+    "kubernetes","git","html","css","typescript","mongodb","machine learning",
+    "algorithms","agile","linux","c++","c#","tensorflow","pytorch","django","flask",
+    "nlp","deep learning","mysql","postgresql","azure","gcp","selenium","spring boot",
+    "spring","figma","power bi","tableau","hadoop","spark","redux","graphql",
+    "express","unity","unreal","swift","kotlin","flutter","react native",
+    "solidity","blockchain","terraform","ansible","jenkins","ci/cd","rest api",
+    "microservices","opencv","scikit-learn","pandas","numpy","r","excel",
+    "jira","confluence","networking","tcp/ip","cisco","penetration testing",
+    "wireshark","firewall","active directory","windows server","bash",
+    "shell scripting","embedded c","rtos","arduino","raspberry pi","matlab",
+    "computer vision","opengl","c","go","rust","php","ruby","laravel",
+    "wordpress","seo","ui design","ux research","wireframing","adobe xd",
+    "sketch","prototyping","product roadmap","stakeholder management",
+    "agile scrum","jql","test automation","manual testing","load testing",
+    "cypress","postman","junit","pytest","oracle","dba","backup recovery",
+    "sql server","business intelligence","etl","data warehousing","ssis",
+    "robotics","ros","plc","automation","hive","kafka","airflow",
+]
+
+# Role -> required/expected skills mapping (matches all 35 label_encoder classes)
+CAREER_SKILLS = {
+    "AI Engineer": ["python","machine learning","tensorflow","pytorch","deep learning","nlp","scikit-learn","pandas","numpy"],
+    "AI Research Scientist": ["python","machine learning","deep learning","tensorflow","pytorch","nlp","computer vision","r"],
+    "Automation Engineer": ["python","selenium","ci/cd","jenkins","ansible","bash","test automation"],
+    "Backend Developer": ["node.js","python","java","sql","rest api","docker","mongodb","microservices"],
+    "Blockchain developer": ["solidity","blockchain","javascript","python","rest api"],
+    "Business Intelligence(BI)  Developer": ["power bi","tableau","sql","etl","data warehousing","ssis","excel"],
+    "Cloud Engineer": ["aws","azure","gcp","docker","kubernetes","terraform","linux","ci/cd"],
+    "Computer Vision Engineer": ["python","opencv","tensorflow","pytorch","deep learning","computer vision","numpy"],
+    "Cyber security Analyst": ["networking","wireshark","firewall","penetration testing","tcp/ip","active directory","linux"],
+    "DL Engineer": ["python","deep learning","tensorflow","pytorch","numpy","pandas","nlp"],
+    "Data Analyst": ["sql","excel","python","power bi","tableau","pandas","r"],
+    "Data engineer": ["python","sql","spark","hadoop","kafka","airflow","etl","aws"],
+    "Data scientist": ["python","machine learning","sql","pandas","numpy","tensorflow","excel"],
+    "Database Administrator": ["sql","mysql","postgresql","oracle","dba","backup recovery","sql server"],
+    "DevOps Engineer": ["docker","kubernetes","aws","ci/cd","linux","jenkins","terraform","ansible"],
+    "Embedded Systems Engineer": ["embedded c","rtos","arduino","raspberry pi","c","c++","matlab"],
+    "Frontend Developer": ["javascript","react","html","css","typescript","redux","figma"],
+    "Full Stack developer": ["javascript","react","node.js","sql","git","html","css"],
+    "Game Developer": ["unity","unreal","c#","c++","opengl","git"],
+    "IT Support Specialist": ["windows server","active directory","networking","linux","bash"],
+    "Java Developer": ["java","spring boot","spring","sql","git","microservices"],
+    "Mobile App Developer": ["flutter","react native","kotlin","swift","java"],
+    "NLP Engineer": ["python","nlp","machine learning","deep learning","tensorflow","pytorch"],
+    "Network engineer": ["networking","tcp/ip","cisco","firewall","wireshark","linux"],
+    "Product Manager": ["jira","confluence","product roadmap","stakeholder management","agile scrum","excel"],
+    "Python developer": ["python","django","flask","sql","git","rest api"],
+    "Quality Assurance Engineer": ["selenium","test automation","manual testing","jira","cypress","postman"],
+    "Robotics Engineer": ["python","ros","robotics","c++","matlab","arduino"],
+    "Site Reliability Engineer": ["linux","kubernetes","docker","ci/cd","aws","bash","terraform"],
+    "Software Tester": ["manual testing","selenium","test automation","jira","junit","pytest"],
+    "Software engineer": ["python","java","git","algorithms","sql","docker"],
+    "Solution Architect": ["aws","azure","microservices","docker","kubernetes","rest api"],
+    "System Administrator": ["linux","windows server","bash","networking","active directory"],
+    "Technical Project Mnger": ["jira","confluence","agile scrum","stakeholder management","product roadmap"],
+    "UI-UX Designer": ["figma","adobe xd","sketch","wireframing","prototyping","ux research"],
+}
+
+def clean(text):
+    text = text.lower()
+    text = re.sub(r"\n+", " ", text)
+    text = re.sub(r"[^a-z0-9\s\+\#\.]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+def skill_fit_percent(found_skills, role):
+    required = CAREER_SKILLS.get(role, [])
+    if not required:
+        return 0
+    matched = [s for s in required if s in found_skills]
+    return round((len(matched) / len(required)) * 100)
+
+def analyze_text(text, predicted_career):
+    text_lower = text.lower()
+    word_count = len(text_lower.split())
+    found_skills = [s for s in SKILL_BANK if s in text_lower]
+
+    required_skills = CAREER_SKILLS.get(predicted_career, [])
+    missing_skills = [s for s in required_skills if s not in found_skills]
+    matching_percentage = skill_fit_percent(found_skills, predicted_career)
+
+    ats_score = 0
+    ats_score += min(len(found_skills) * 3, 35)
+    ats_score += 15 if re.search(r"(@|\+?\d{10})", text_lower) else 0
+    ats_score += 15 if re.search(r"education|degree|university|college", text_lower) else 0
+    ats_score += 15 if re.search(r"experience|internship|worked|project", text_lower) else 0
+    ats_score += 10 if re.search(r"%|\$|\d+\s?(users|clients|projects)", text_lower) else 0
+    ats_score += 10 if word_count > 150 else 5
+    ats_score = min(ats_score, 98)
+
+    strengths = []
+    if len(found_skills) >= 5: strengths.append("Strong technical skill set detected")
+    if re.search(r"%|\d+\s?(users|clients)", text_lower): strengths.append("Quantified achievements found")
+    if re.search(r"experience|internship", text_lower): strengths.append("Experience section detected")
+    if re.search(r"project", text_lower): strengths.append("Projects section detected")
+    if not strengths: strengths.append("Resume successfully parsed")
+
+    weaknesses = []
+    if not re.search(r"%|\d+\s?(users|clients)", text_lower): weaknesses.append("No quantified achievements found")
+    if not re.search(r"(@|\+?\d{10})", text_lower): weaknesses.append("Contact details not clearly detected")
+    if len(found_skills) < 5: weaknesses.append("Limited technical keywords found")
+    if word_count < 150: weaknesses.append("Resume content too short")
+    if missing_skills: weaknesses.append(f"Missing {len(missing_skills)} key skill(s) for {predicted_career}")
+    if not weaknesses: weaknesses.append("Minor formatting issues may affect ATS")
+
+    # Dynamic suggestions based on actual detected weaknesses
+    suggestions = []
+    if "No quantified achievements found" in weaknesses:
+        suggestions.append("Quantify achievements (e.g. improved performance by 30%, served 500 users)")
+    if "Contact details not clearly detected" in weaknesses:
+        suggestions.append("Add a clear email and phone number at the top of your resume")
+    if "Limited technical keywords found" in weaknesses:
+        suggestions.append(f"Add more {predicted_career}-relevant keywords throughout your resume")
+    if "Resume content too short" in weaknesses:
+        suggestions.append("Expand experience/project descriptions with more specific detail")
+    if missing_skills:
+        suggestions.append(f"Consider adding or highlighting: {', '.join(missing_skills[:5])}")
+    if not suggestions:
+        suggestions.append("Resume is well-optimized — keep reinforcing role-specific keywords")
+
+    return {
+        "ats_score": ats_score,
+        "found_skills": found_skills,
+        "missing_skills": missing_skills,
+        "matching_percentage": matching_percentage,
+        "strengths": strengths,
+        "weaknesses": weaknesses,
+        "suggestions": suggestions,
+        "word_count": word_count,
+    }
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    if "file" not in request.files:
+        return jsonify({"error": "No file"}), 400
+    file = request.files["file"]
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        file.save(tmp.name)
+        tmp_path = tmp.name
+    try:
+        print(f"Processing: {file.filename}")
+        pages = convert_from_path(tmp_path, dpi=100)
+        text  = "".join([pytesseract.image_to_string(p) for p in pages])
+        cleaned = clean(text)
+
+        if len(cleaned) < 20:
+            return jsonify({"error": "Could not extract readable text from this PDF"}), 400
+
+        features = tfidf.transform([cleaned])
+        pred     = model.predict(features)
+        career   = le.inverse_transform(pred)[0]
+        scores   = model.decision_function(features)[0]
+        top3_idx = scores.argsort()[-3:][::-1]
+
+        found_skills_for_top3 = [s for s in SKILL_BANK if s in cleaned]
+        top3 = [
+            {
+                "role": le.classes_[i],
+                "skill_fit_percent": skill_fit_percent(found_skills_for_top3, le.classes_[i])
+            }
+            for i in top3_idx
+        ]
+
+        analysis = analyze_text(text, career)
+        print(f"Predicted: {career}, ATS: {analysis['ats_score']}, Match: {analysis['matching_percentage']}%")
+
+        return jsonify({
+            "predicted_career": career,
+            "top_3": top3,
+            "ats_score": analysis["ats_score"],
+            "matching_percentage": analysis["matching_percentage"],
+            "found_skills": analysis["found_skills"],
+            "missing_skills": analysis["missing_skills"],
+            "strengths": analysis["strengths"],
+            "weaknesses": analysis["weaknesses"],
+            "suggestions": analysis["suggestions"],
+            "word_count": analysis["word_count"],
+        })
+    except Exception as e:
+        print(f"Error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        os.unlink(tmp_path)
+
+
+# ============================================================
+# PRODUCTION AI INTERVIEW — BEDROCK + DYNAMODB + S3 + TRANSCRIBE
+# ============================================================
+
+AWS_REGION = os.getenv("AWS_REGION", os.getenv("AWS_DEFAULT_REGION", "us-east-1"))
+BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "")
+INTERVIEW_TABLE_NAME = os.getenv("INTERVIEW_TABLE_NAME", "career-ai-interviews")
+INTERVIEW_MEDIA_BUCKET = os.getenv("INTERVIEW_MEDIA_BUCKET", "")
+TRANSCRIBE_LANGUAGE_CODE = os.getenv("TRANSCRIBE_LANGUAGE_CODE", "en-US")
+MEDIA_PREFIX = os.getenv("INTERVIEW_MEDIA_PREFIX", "interviews")
+
+bedrock_runtime = None
+s3_client = None
+transcribe_client = None
+dynamodb_table = None
+
+if boto3 is not None:
+    try:
+        session = boto3.session.Session(region_name=AWS_REGION)
+        if BEDROCK_MODEL_ID:
+            bedrock_runtime = session.client("bedrock-runtime")
+        s3_client = session.client("s3")
+        transcribe_client = session.client("transcribe")
+        if INTERVIEW_TABLE_NAME:
+            dynamodb_table = session.resource("dynamodb").Table(INTERVIEW_TABLE_NAME)
+    except Exception as exc:
+        app.logger.exception("AWS client initialization failed: %s", exc)
+
+# Local fallback is intentionally only for development. Production uses DynamoDB.
+LOCAL_SESSIONS = {}
+
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _bedrock_text(prompt, max_tokens=1200):
+    if bedrock_runtime is None or not BEDROCK_MODEL_ID:
+        raise RuntimeError(
+            "Amazon Bedrock is not configured. Set BEDROCK_MODEL_ID and provide an AWS IAM identity."
+        )
+    response = bedrock_runtime.converse(
+        modelId=BEDROCK_MODEL_ID,
+        messages=[{"role": "user", "content": [{"text": prompt}]}],
+        inferenceConfig={"maxTokens": max_tokens, "temperature": 0.4, "topP": 0.9},
+    )
+    content = response.get("output", {}).get("message", {}).get("content", [])
+    return "\n".join(item.get("text", "") for item in content if item.get("text"))
+
+
+def _extract_json(text):
+    cleaned = (text or "").strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.I)
+        cleaned = re.sub(r"\s*```$", "", cleaned)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", cleaned, flags=re.S)
+        if not match:
+            raise ValueError("Bedrock returned an invalid JSON response")
+        return json.loads(match.group(0))
+
+
+def _save_session(session):
+    if dynamodb_table is not None:
+        dynamodb_table.put_item(Item=session)
+    else:
+        LOCAL_SESSIONS[session["session_id"]] = session
+
+
+def _get_session(session_id):
+    if dynamodb_table is not None:
+        response = dynamodb_table.get_item(Key={"session_id": session_id}, ConsistentRead=True)
+        return response.get("Item")
+    return LOCAL_SESSIONS.get(session_id)
+
+
+def _update_session(session):
+    _save_session(session)
+
+
+def _build_history_text(history):
+    return "\n".join(
+        f"Q: {item.get('question', '')}\nA: {item.get('answer', '')}\nScore: {item.get('score', '')}"
+        for item in history[-10:]
+        if isinstance(item, dict)
+    )
+
+
+def _safe_media_extension(filename, mimetype):
+    extension = os.path.splitext(filename or "")[1].lower()
+    allowed = {".webm", ".mp4", ".wav", ".m4a", ".mp3", ".ogg", ".flac", ".amr"}
+    if extension in allowed:
+        return extension
+    mapping = {
+        "audio/webm": ".webm",
+        "video/webm": ".webm",
+        "audio/wav": ".wav",
+        "audio/x-wav": ".wav",
+        "audio/mpeg": ".mp3",
+        "audio/mp4": ".m4a",
+        "video/mp4": ".mp4",
+        "audio/ogg": ".ogg",
+    }
+    return mapping.get((mimetype or "").lower(), ".webm")
+
+
+@app.route("/api/v1/interview/start", methods=["POST"])
+def start_ai_interview():
+    data = request.get_json(silent=True) or {}
+    role = str(data.get("role", "")).strip()
+    experience = str(data.get("experience", "")).strip()
+    interview_type = str(data.get("interview_type", "Mixed")).strip()
+    try:
+        question_count = int(data.get("question_count", 5))
+    except (TypeError, ValueError):
+        question_count = 5
+    resume_context = str(data.get("resume_context", "")).strip()[:12000]
+    job_description = str(data.get("job_description", "")).strip()[:12000]
+
+    if not role:
+        return jsonify({"error": "Target role is required."}), 400
+    if question_count not in (5, 10, 15):
+        return jsonify({"error": "question_count must be 5, 10, or 15."}), 400
+
+    prompt = f"""
+You are a professional AI interviewer conducting a structured interview.
+Target role: {role}
+Experience: {experience}
+Interview type: {interview_type}
+Resume context: {resume_context or 'Not provided'}
+Job description: {job_description or 'Not provided'}
+
+Create the first question. It must be practical, job-relevant, concise and appropriate for the candidate's experience.
+Do not ask about protected characteristics or unrelated personal information.
+Return ONLY JSON: {{"question":"..."}}
+"""
+    try:
+        result = _extract_json(_bedrock_text(prompt, max_tokens=500))
+        question = str(result.get("question", "")).strip()
+        if not question:
+            raise ValueError("No question returned by Bedrock")
+
+        session_id = str(uuid.uuid4())
+        session = {
+            "session_id": session_id,
+            "status": "IN_PROGRESS",
+            "created_at": _now(),
+            "updated_at": _now(),
+            "role": role,
+            "experience": experience,
+            "interview_type": interview_type,
+            "question_count": question_count,
+            "resume_context": resume_context,
+            "job_description": job_description,
+            "current_question": question,
+            "current_question_number": 1,
+            "answers": [],
+            "elapsed_seconds": 0,
+        }
+        _save_session(session)
+        return jsonify({
+            "session_id": session_id,
+            "question": question,
+            "question_count": question_count,
+            "provider": "amazon-bedrock",
+            "model_id": BEDROCK_MODEL_ID,
+        })
+    except Exception as exc:
+        app.logger.exception("AI interview start failed")
+        return jsonify({"error": str(exc)}), 503
+
+
+@app.route("/api/v1/interview/session/<session_id>", methods=["GET"])
+def get_interview_session(session_id):
+    session = _get_session(session_id)
+    if not session:
+        return jsonify({"error": "Interview session not found."}), 404
+    return jsonify(session)
+
+
+@app.route("/api/v1/interview/media", methods=["POST"])
+def upload_interview_media():
+    if not INTERVIEW_MEDIA_BUCKET or s3_client is None:
+        return jsonify({"error": "Interview media storage is not configured."}), 503
+
+    session_id = str(request.form.get("session_id", "")).strip()
+    question_number = str(request.form.get("question_number", "1")).strip()
+    media = request.files.get("media")
+    if not session_id or not media:
+        return jsonify({"error": "session_id and media are required."}), 400
+
+    session = _get_session(session_id)
+    if not session:
+        return jsonify({"error": "Interview session not found."}), 404
+
+    extension = _safe_media_extension(media.filename, media.mimetype)
+    job_token = uuid.uuid4().hex
+    key = f"{MEDIA_PREFIX}/{session_id}/answer-{question_number}-{job_token}{extension}"
+
+    try:
+        s3_client.upload_fileobj(
+            media.stream,
+            INTERVIEW_MEDIA_BUCKET,
+            key,
+            ExtraArgs={"ContentType": media.mimetype or "application/octet-stream"},
+        )
+        media_uri = f"s3://{INTERVIEW_MEDIA_BUCKET}/{key}"
+
+        if transcribe_client is None:
+            return jsonify({"media_uri": media_uri, "transcription_status": "NOT_CONFIGURED"}), 200
+
+        # Amazon Transcribe batch jobs consume an S3 media object.
+        # We keep each answer as a separate job so the transcript maps cleanly to the question.
+        job_name = f"career-ai-{session_id[:8]}-{question_number}-{job_token[:12]}"
+        transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_name,
+            Media={"MediaFileUri": media_uri},
+            MediaFormat=extension.lstrip("."),
+            LanguageCode=TRANSCRIBE_LANGUAGE_CODE,
+            OutputBucketName=INTERVIEW_MEDIA_BUCKET,
+            OutputKey=f"{MEDIA_PREFIX}/{session_id}/transcripts/{job_name}.json",
+            Tags=[
+                {"Key": "Application", "Value": "career-ai"},
+                {"Key": "SessionId", "Value": session_id},
+            ],
+        )
+
+        session.setdefault("media", []).append({
+            "question_number": int(question_number),
+            "media_uri": media_uri,
+            "transcription_job": job_name,
+            "transcription_status": "IN_PROGRESS",
+            "created_at": _now(),
+        })
+        session["updated_at"] = _now()
+        _update_session(session)
+
+        return jsonify({
+            "media_uri": media_uri,
+            "transcription_job": job_name,
+            "transcription_status": "IN_PROGRESS",
+        }), 202
+    except Exception as exc:
+        app.logger.exception("Interview media upload failed")
+        return jsonify({"error": str(exc)}), 503
+
+
+@app.route("/api/v1/interview/transcription/<job_name>", methods=["GET"])
+def get_interview_transcription(job_name):
+    if transcribe_client is None:
+        return jsonify({"error": "Amazon Transcribe is not configured."}), 503
+    try:
+        response = transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+        job = response.get("TranscriptionJob", {})
+        status = job.get("TranscriptionJobStatus", "UNKNOWN")
+        result = {"job_name": job_name, "status": status}
+
+        if status == "COMPLETED":
+            transcript_uri = job.get("Transcript", {}).get("TranscriptFileUri")
+            if not transcript_uri:
+                raise RuntimeError("Transcribe completed without a transcript URI")
+            # With an explicit OutputBucketName/OutputKey the URI points to our S3 object.
+            bucket = INTERVIEW_MEDIA_BUCKET
+            key = ""
+            if transcript_uri.startswith("s3://"):
+                raw = transcript_uri[5:]
+                if "/" in raw:
+                    bucket, key = raw.split("/", 1)
+            elif transcript_uri.startswith("https://"):
+                marker = ".amazonaws.com/"
+                if marker in transcript_uri:
+                    raw = transcript_uri.split(marker, 1)[1]
+                    if "/" in raw:
+                        bucket, key = raw.split("/", 1)
+            if key:
+                obj = s3_client.get_object(Bucket=bucket, Key=key)
+                payload = json.loads(obj["Body"].read().decode("utf-8"))
+                text = payload.get("results", {}).get("transcripts", [{}])[0].get("transcript", "")
+            else:
+                text = ""
+            result["transcript"] = text.strip()
+        elif status == "FAILED":
+            result["reason"] = job.get("FailureReason", "Transcription failed")
+
+        return jsonify(result)
+    except Exception as exc:
+        app.logger.exception("Transcription status lookup failed")
+        return jsonify({"error": str(exc)}), 503
+
+
+@app.route("/api/v1/interview/answer", methods=["POST"])
+def answer_ai_interview():
+    data = request.get_json(silent=True) or {}
+    session_id = str(data.get("session_id", "")).strip()
+    if not session_id:
+        return jsonify({"error": "session_id is required."}), 400
+
+    session = _get_session(session_id)
+    if not session:
+        return jsonify({"error": "Interview session not found."}), 404
+    if session.get("status") == "COMPLETED":
+        return jsonify({"error": "Interview session is already completed."}), 409
+
+    answer = str(data.get("answer", "")).strip()[:12000]
+    transcript = str(data.get("transcript", "")).strip()[:12000]
+    effective_answer = transcript or answer
+    question = str(data.get("question", session.get("current_question", ""))).strip()[:8000]
+    question_number = int(data.get("question_number", session.get("current_question_number", 1)))
+    question_count = int(session.get("question_count", 5))
+
+    if not effective_answer:
+        return jsonify({"error": "A transcript or text answer is required."}), 400
+
+    history = session.get("answers", [])
+    history_text = _build_history_text(history)
+    prompt = f"""
+You are an expert interviewer evaluating a candidate for {session['role']}.
+Experience: {session.get('experience', '')}
+Interview type: {session.get('interview_type', 'Mixed')}
+Question {question_number} of {question_count}.
+Resume context: {session.get('resume_context', '') or 'Not provided'}
+Job description: {session.get('job_description', '') or 'Not provided'}
+Previous history:
+{history_text or 'No previous answers'}
+
+Current question: {question}
+Candidate answer: {effective_answer}
+
+Score the answer from 0-100 based on correctness, relevance, technical depth, reasoning, clarity and role alignment.
+Provide constructive feedback. If another question remains, create a useful adaptive follow-up question.
+Do not infer protected characteristics.
+Return ONLY JSON:
+{{"score":0,"feedback":"...","strengths":["..."],"improvements":["..."],"next_question":"...","completed":false}}
+"""
+    try:
+        result = _extract_json(_bedrock_text(prompt, max_tokens=1200))
+        score = max(0, min(100, int(float(result.get("score", 0)))))
+        completed = question_number >= question_count or bool(result.get("completed", False))
+        next_question = str(result.get("next_question", "")).strip()
+        if not completed and not next_question:
+            raise ValueError("Bedrock did not return the next interview question")
+
+        answer_record = {
+            "question_number": question_number,
+            "question": question,
+            "answer": effective_answer,
+            "score": score,
+            "feedback": str(result.get("feedback", "")).strip(),
+            "strengths": result.get("strengths", []),
+            "improvements": result.get("improvements", []),
+            "answered_at": _now(),
+        }
+        history.append(answer_record)
+        session["answers"] = history
+        session["updated_at"] = _now()
+
+        if completed:
+            session["status"] = "COMPLETED"
+            session["completed_at"] = _now()
+            session["current_question"] = None
+        else:
+            session["current_question"] = next_question
+            session["current_question_number"] = question_number + 1
+
+        _update_session(session)
+        return jsonify({
+            "session_id": session_id,
+            "score": score,
+            "feedback": answer_record["feedback"],
+            "strengths": answer_record["strengths"],
+            "improvements": answer_record["improvements"],
+            "next_question": None if completed else next_question,
+            "completed": completed,
+            "answer_count": len(history),
+        })
+    except Exception as exc:
+        app.logger.exception("AI interview answer evaluation failed")
+        return jsonify({"error": str(exc)}), 503
+
+
+@app.route("/api/v1/interview/complete", methods=["POST"])
+def complete_ai_interview():
+    data = request.get_json(silent=True) or {}
+    session_id = str(data.get("session_id", "")).strip()
+    session = _get_session(session_id) if session_id else None
+    if not session:
+        return jsonify({"error": "Interview session not found."}), 404
+
+    answers = session.get("answers", [])
+    scores = [int(item.get("score", 0)) for item in answers if isinstance(item, dict)]
+    average_score = round(sum(scores) / len(scores), 1) if scores else 0
+    session["status"] = "COMPLETED"
+    session["completed_at"] = _now()
+    session["updated_at"] = _now()
+    session["average_score"] = average_score
+    session["elapsed_seconds"] = max(0, int(data.get("elapsed_seconds", 0)))
+
+    try:
+        history_text = _build_history_text(answers)
+        prompt = f"""
+Create a concise final interview report for a {session['role']} candidate.
+Experience: {session.get('experience', '')}
+Interview type: {session.get('interview_type', '')}
+Average answer score: {average_score}
+Interview history:
+{history_text}
+
+Return ONLY JSON:
+{{
+  "overall_summary":"...",
+  "strengths":["..."],
+  "improvements":["..."],
+  "technical_score":0,
+  "communication_score":0,
+  "problem_solving_score":0,
+  "confidence_score":0,
+  "recommendation":"Strong Hire|Hire|Borderline|Needs Improvement"
+}}
+"""
+        report = _extract_json(_bedrock_text(prompt, max_tokens=1200))
+        session["report"] = report
+    except Exception as exc:
+        app.logger.warning("Final AI report generation failed; returning deterministic summary: %s", exc)
+        session["report"] = {
+            "overall_summary": "Interview completed. Review the individual answer feedback for the detailed assessment.",
+            "strengths": [],
+            "improvements": [],
+            "technical_score": average_score,
+            "communication_score": average_score,
+            "problem_solving_score": average_score,
+            "confidence_score": average_score,
+            "recommendation": "Borderline" if average_score < 70 else "Hire",
+        }
+
+    _update_session(session)
+    return jsonify({
+        "session_id": session_id,
+        "status": session["status"],
+        "average_score": average_score,
+        "answer_count": len(answers),
+        "report": session["report"],
+    })
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({
+        "status": "running",
+        "model_loaded": model is not None,
+        "bedrock_configured": bool(BEDROCK_MODEL_ID and bedrock_runtime),
+        "service": "career-ai-backend",
+    })
+
+
+@app.route("/ready", methods=["GET"])
+def ready():
+    if model is None:
+        return jsonify({"status": "not_ready", "reason": "resume model not loaded"}), 503
+    return jsonify({"status": "ready"})
+
+
+if __name__ == "__main__":
+    app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", "5000")), threaded=True)
+================ package.json ================
+{
+  "name": "my-react-app",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.2.0",
+    "@mui/material": "^9.2.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.18.1",
+    "framer-motion": "^12.42.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^1.16.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-icons": "^5.7.0",
+    "react-router-dom": "^7.18.1",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.19"
+  }
+}
+================ requirements.txt ================
+Flask==3.1.2
+flask-cors==6.0.1
+boto3==1.40.25
+numpy==2.2.6
+pandas==2.3.2
+scikit-learn==1.7.1
+pytesseract==0.3.13
+pdf2image==1.17.0
+pdfplumber==0.11.7
+Pillow==11.3.0
+gunicorn==23.0.0
+joblib==1.5.1

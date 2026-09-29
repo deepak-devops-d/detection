@@ -1,0 +1,21 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: career-ai-backend
+  namespace: career-ai-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: career-ai-backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: career-ai-frontend
+  namespace: career-ai-prod
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: career-ai-frontend

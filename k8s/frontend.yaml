@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: career-ai-frontend
+  namespace: career-ai-prod
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app: career-ai-frontend
+
+  template:
+    metadata:
+      labels:
+        app: career-ai-frontend
+
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: frontend
+
+          image: 114354606708.dkr.ecr.ap-south-1.amazonaws.com/career-ai/frontend:1.0.4
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          volumeMounts:
+            - name: runtime-config
+              mountPath: /usr/share/nginx/html/config.js
+              subPath: config.js
+              readOnly: true
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+      volumes:
+        - name: runtime-config
+          configMap:
+            name: career-ai-frontend-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: career-ai-frontend
+  namespace: career-ai-prod
+spec:
+  type: ClusterIP
+
+  selector:
+    app: career-ai-frontend
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+
+

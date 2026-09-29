@@ -1,0 +1,11 @@
+# Copy this to backend.tf and fill in your state bucket/key.
+# The S3 bucket should have versioning, encryption, and restricted access.
+terraform {
+  backend "s3" {
+    bucket       = "YOUR-TERRAFORM-STATE-BUCKET"
+    key          = "career-ai/prod/terraform.tfstate"
+    region       = "ap-south-1"
+    encrypt      = true
+    use_lockfile = true
+  }
+}

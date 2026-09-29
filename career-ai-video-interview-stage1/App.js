@@ -1,0 +1,4205 @@
+import React from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import CssBaseline from "@mui/material/CssBaseline";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
+import {
+  Alert,
+  AppBar,
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  CircularProgress,
+  Checkbox,
+  Chip,
+  Container,
+  Divider,
+  Drawer,
+  FormControlLabel,
+  Grid,
+  IconButton,
+  InputBase,
+  LinearProgress,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Select,
+  Snackbar,
+  Stack,
+  Switch,
+  Tab,
+  Tabs,
+  TextField,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+
+import {
+  ThemeProvider as MuiThemeProvider,
+  createTheme,
+} from "@mui/material/styles";
+
+import { AnimatePresence, motion } from "framer-motion";
+
+import {
+  MdAdd,
+  MdArrowBack,
+  MdArrowForward,
+  MdAutoAwesome,
+  MdCheckCircle,
+  MdDownload,
+  MdError,
+  MdLightMode,
+  MdRefresh,
+  MdSave,
+  MdCancel,
+  MdCloudUpload,
+  MdDarkMode,
+  MdDelete,
+  MdDescription,
+  MdEdit,
+  MdLightbulb,
+  MdLock,
+  MdLogout,
+  MdMenu,
+  MdMic,
+  MdNotifications,
+  MdPerson,
+  MdSearch,
+  MdSettings,
+  MdSpaceDashboard,
+  MdStop,
+  MdTrendingUp,
+  MdUploadFile,
+  MdWorkOutline,
+} from "react-icons/md";
+
+import { FcGoogle } from "react-icons/fc";
+import AIVideoInterview from "./pages/AIVideoInterview";
+
+const PRINT_CSS = `
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .resume-preview,
+  .resume-preview * {
+    visibility: visible !important;
+  }
+
+  .resume-preview {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 18mm !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: white !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
+`;
+
+/* ============================================================
+GLOBAL STYLES
+============================================================ */
+
+const GLOBAL_CSS = ` {
+--font-display: 'Sora', 'Inter', sans-serif;
+--font-body: 'Inter', sans-serif;
+}
+
+{
+box-sizing: border-box;
+}
+
+html,
+body {
+margin: 0;
+padding: 0;
+font-family: var(--font-body);
+scroll-behavior: smooth;
+}
+
+#root {
+min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+width: 8px;
+height: 8px;
+}
+
+::-webkit-scrollbar-track {
+background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+background: rgba(124, 58, 237, 0.35);
+border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+background: rgba(124, 58, 237, 0.55);
+}
+
+a {
+text-decoration: none;
+color: inherit;
+}
+
+.glass {
+background: rgba(255, 255, 255, 0.06);
+backdrop-filter: blur(18px);
+-webkit-backdrop-filter: blur(18px);
+border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-light {
+background: rgba(255, 255, 255, 0.7);
+backdrop-filter: blur(18px);
+-webkit-backdrop-filter: blur(18px);
+border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.gradient-text {
+background: linear-gradient(
+120deg,
+#2563EB 0%,
+#7C3AED 55%,
+#06B6D4 100%
+);
+
+-webkit-background-clip: text;
+background-clip: text;
+-webkit-text-fill-color: transparent;
+}
+
+.aurora-bg {
+position: fixed;
+inset: 0;
+z-index: -1;
+overflow: hidden;
+pointer-events: none;
+}
+
+.aurora-blob {
+position: absolute;
+border-radius: 50%;
+filter: blur(90px);
+opacity: 0.45;
+}
+`;
+
+function GlobalStyleTag() {
+  return (
+    <style
+      dangerouslySetInnerHTML={{
+        __html: GLOBAL_CSS + PRINT_CSS,
+      }}
+    />
+  );
+}
+
+/* ============================================================
+GOOGLE FONTS
+============================================================ */
+
+function useGoogleFonts() {
+  useEffect(() => {
+    const link = document.createElement("link");
+
+    link.rel = "stylesheet";
+
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap";
+
+    document.head.appendChild(link);
+
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+}
+
+/* ============================================================
+THEME
+============================================================ */
+
+const brand = {
+  primary: "#2563EB",
+  secondary: "#7C3AED",
+  accent: "#06B6D4",
+  bgLight: "#F8FAFC",
+  bgDark: "#0F172A",
+};
+
+function buildTheme(mode) {
+  const isDark = mode === "dark";
+
+  return createTheme({
+    palette: {
+      mode,
+
+      primary: {
+        main: brand.primary,
+      },
+
+      secondary: {
+        main: brand.secondary,
+      },
+
+      info: {
+        main: brand.accent,
+      },
+
+      background: {
+        default: isDark ? brand.bgDark : brand.bgLight,
+
+        paper: isDark ? "#141B2E" : "#FFFFFF",
+      },
+
+      text: {
+        primary: isDark ? "#E7ECF7" : "#0F172A",
+
+        secondary: isDark ? "#94A3B8" : "#475569",
+      },
+    },
+
+    typography: {
+      fontFamily: "Inter, sans-serif",
+
+      h1: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 800,
+      },
+
+      h2: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 700,
+      },
+
+      h3: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 700,
+      },
+
+      h4: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 700,
+      },
+
+      h5: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 600,
+      },
+
+      h6: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 600,
+      },
+
+      button: {
+        fontFamily: "Sora, sans-serif",
+        fontWeight: 600,
+        textTransform: "none",
+      },
+    },
+
+    shape: {
+      borderRadius: 16,
+    },
+
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            padding: "10px 22px",
+          },
+
+          containedPrimary: {
+            backgroundImage: `linear-gradient(120deg, ${brand.primary}, ${brand.secondary})`,
+
+            boxShadow: "0 8px 24px rgba(37, 99, 235, 0.28)",
+
+            "&:hover": {
+              boxShadow: "0 10px 30px rgba(124, 58, 237, 0.38)",
+            },
+          },
+        },
+      },
+
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+          },
+        },
+      },
+
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            borderRadius: 20,
+          },
+        },
+      },
+    },
+  });
+}
+
+const brandColors = brand;
+
+/* ============================================================
+INTERVIEW DATA
+============================================================ */
+
+const JOB_ROLES = [
+  "Software Engineer",
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "AI Engineer",
+  "Data Scientist",
+  "Python Developer",
+  "Java Developer",
+  "Cloud Engineer",
+  "Cyber Security",
+  "Machine Learning Engineer",
+];
+
+const EXPERIENCE_LEVELS = ["Fresher", "1 Year", "2 Years", "3+ Years"];
+
+const INTERVIEW_TYPES = ["Technical", "HR", "Mixed", "Behavioral"];
+
+const TECHNICAL_Q = {
+  "Software Engineer": [
+    "Explain the difference between an array and a linked list.",
+    "What is time complexity, and why does it matter?",
+    "How would you design a URL shortener?",
+    "Explain the SOLID principles briefly.",
+    "What is the difference between process and thread?",
+  ],
+
+  "Frontend Developer": [
+    "What is the virtual DOM and why does React use it?",
+    "Explain the difference between state and props.",
+    "How does CSS specificity work?",
+    "What are React hooks and why were they introduced?",
+    "How would you optimize a slow-loading web page?",
+  ],
+
+  "Backend Developer": [
+    "What is REST and what are its core principles?",
+    "Explain authentication versus authorization.",
+    "What is database indexing?",
+    "How does caching improve backend performance?",
+    "What is the difference between SQL and NoSQL?",
+  ],
+
+  "Full Stack Developer": [
+    "How does a request travel from browser to backend?",
+    "Explain REST API design.",
+    "How would you secure a full-stack application?",
+    "What is CORS and why does it happen?",
+    "How would you scale a web application?",
+  ],
+
+  "AI Engineer": [
+    "What is the difference between supervised and unsupervised learning?",
+    "Explain overfitting and how to prevent it.",
+    "What is a confusion matrix?",
+    "How do embeddings work?",
+    "What is the difference between training and inference?",
+  ],
+
+  "Data Scientist": [
+    "What is feature engineering?",
+    "Explain the bias-variance tradeoff.",
+    "What is cross-validation?",
+    "How do you handle missing data?",
+    "What is the difference between correlation and causation?",
+  ],
+
+  "Python Developer": [
+    "What are Python decorators?",
+    "Explain list comprehensions.",
+    "What is the difference between a list and tuple?",
+    "How does Python garbage collection work?",
+    "What are virtual environments?",
+  ],
+
+  "Java Developer": [
+    "Explain JVM, JRE and JDK.",
+    "What is the difference between an interface and abstract class?",
+    "Explain Java garbage collection.",
+    "What is the Java Collections Framework?",
+    "What is multithreading in Java?",
+  ],
+
+  "Cloud Engineer": [
+    "What is the difference between IaaS, PaaS and SaaS?",
+    "Explain availability zones.",
+    "What is autoscaling?",
+    "How would you design a highly available application?",
+    "What is a VPC?",
+  ],
+
+  "Cyber Security": [
+    "What is the difference between authentication and authorization?",
+    "What is SQL injection?",
+    "Explain the principle of least privilege.",
+    "What is encryption?",
+    "What is a firewall?",
+  ],
+
+  "Machine Learning Engineer": [
+    "Explain the machine learning pipeline.",
+    "What is model drift?",
+    "How do you evaluate a classification model?",
+    "What is feature scaling?",
+    "Explain precision versus recall.",
+  ],
+};
+
+const HR_Q = [
+  "Tell me about yourself.",
+  "What are your greatest strengths?",
+  "What is one weakness you are working on?",
+  "Why should we hire you?",
+  "Where do you see yourself in five years?",
+];
+
+const BEHAVIORAL_Q = [
+  "Tell me about a difficult problem you solved.",
+  "Describe a time you worked under pressure.",
+  "Tell me about a conflict with a teammate.",
+  "Describe a failure and what you learned.",
+  "Tell me about a time you showed leadership.",
+];
+
+/* ============================================================
+AUTH CONTEXT
+============================================================ */
+
+const AuthContext = createContext(null);
+
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("career_ai_user");
+
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const login = (userData) => {
+    setUser(userData);
+
+    localStorage.setItem("career_ai_user", JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("career_ai_user");
+  };
+
+  const value = useMemo(
+    () => ({
+      user,
+      login,
+      logout,
+    }),
+    [user],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function useAuth() {
+  return useContext(AuthContext);
+}
+
+/* ============================================================
+THEME MODE CONTEXT
+============================================================ */
+
+const ThemeModeContext = createContext(null);
+
+function ThemeModeProvider({ children }) {
+  const [mode, setMode] = useState(() => {
+    return localStorage.getItem("career_ai_theme") || "light";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("career_ai_theme", mode);
+  }, [mode]);
+
+  const theme = useMemo(() => buildTheme(mode), [mode]);
+
+  const value = useMemo(
+    () => ({
+      mode,
+      setMode,
+      toggleMode: () => {
+        setMode((current) => (current === "light" ? "dark" : "light"));
+      },
+    }),
+    [mode],
+  );
+
+  return (
+    <ThemeModeContext.Provider value={value}>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        {children}
+      </MuiThemeProvider>
+    </ThemeModeContext.Provider>
+  );
+}
+
+function useThemeMode() {
+  return useContext(ThemeModeContext);
+}
+
+/* ============================================================
+UTILITY FUNCTIONS
+============================================================ */
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/* ============================================================
+RESUME ANALYSIS API
+============================================================ */
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "https://mycareerai.click";
+
+const HEALTH_URL = `${API_BASE_URL}/health`;
+
+const PREDICT_URL = `${API_BASE_URL}/predict`;
+
+async function checkBackendHealth() {
+  const response = await fetch(HEALTH_URL, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Backend health check failed (${response.status})`);
+  }
+
+  const data = await response.json();
+
+  if (data.model_loaded === false) {
+    throw new Error("Backend is running, but the ML model is not loaded.");
+  }
+
+  return data;
+}
+
+async function analyzeResumeText(file) {
+  if (!file) {
+    throw new Error("Please select a resume PDF.");
+  }
+
+  if (
+    file.type !== "application/pdf" &&
+    !file.name.toLowerCase().endsWith(".pdf")
+  ) {
+    throw new Error("Only PDF files are supported.");
+  }
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error("File is too large. Maximum size is 5 MB.");
+  }
+
+  await checkBackendHealth();
+
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response = await fetch(PREDICT_URL, {
+    method: "POST",
+    body: formData,
+  });
+
+  let data = null;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(
+      `Backend returned an invalid response (${response.status}).`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || data?.error || `Prediction failed (${response.status}).`,
+    );
+  }
+
+  if (data.success === false) {
+    throw new Error(data.message || data.error || "Resume analysis failed.");
+  }
+  return data;
+}
+
+/* ============================================================
+PDF EXPORT
+============================================================ */
+
+async function exportNodeToPdf(node, fileName = "resume-analysis.pdf") {
+  if (!node) {
+    throw new Error("Report element was not found.");
+  }
+
+  const canvas = await html2canvas(node, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+  });
+
+  const imageData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "mm", "a4");
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const imageWidth = pageWidth;
+
+  const imageHeight = (canvas.height * imageWidth) / canvas.width;
+
+  let heightLeft = imageHeight;
+
+  let position = 0;
+
+  pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
+
+  heightLeft -= pageHeight;
+
+  while (heightLeft > 0) {
+    position = heightLeft - imageHeight;
+
+    pdf.addPage();
+
+    pdf.addImage(imageData, "PNG", 0, position, imageWidth, imageHeight);
+
+    heightLeft -= pageHeight;
+  }
+
+  pdf.save(fileName);
+}
+
+function exportResumeToPdf(form) {
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+    compress: true,
+  });
+
+  const PAGE_WIDTH = 210;
+  const PAGE_HEIGHT = 297;
+  const MARGIN = 18;
+  const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+
+  let y = 20;
+
+  const checkPage = () => {
+    if (y > PAGE_HEIGHT - 20) {
+      pdf.addPage();
+      y = 20;
+    }
+  };
+
+  // Section header: uppercase label + underline, consistent spacing
+  const addSection = (title) => {
+    y += 6;
+    checkPage();
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(11);
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(title.toUpperCase(), MARGIN, y);
+    y += 2;
+    pdf.setDrawColor(30, 41, 59);
+    pdf.setLineWidth(0.4);
+    pdf.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
+    y += 6;
+  };
+
+  // Plain paragraph text, left aligned, wraps within margin
+  const addText = (text, fontSize = 10, lineHeight = 5) => {
+    if (!text || !String(text).trim()) return;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(fontSize);
+    pdf.setTextColor(51, 65, 85);
+    const lines = pdf.splitTextToSize(String(text).trim(), CONTENT_WIDTH);
+    lines.forEach((line) => {
+      checkPage();
+      pdf.text(line, MARGIN, y);
+      y += lineHeight;
+    });
+    y += 2;
+  };
+
+  // Bullet list, consistent indent for bullet + text
+  const addBullets = (text, fontSize = 10, lineHeight = 5) => {
+    if (!text || !String(text).trim()) return;
+    const items = String(text).split("\n").map((i) => i.trim()).filter(Boolean);
+    const BULLET_X = MARGIN;
+    const TEXT_X = MARGIN + 5;
+    const BULLET_WIDTH = CONTENT_WIDTH - 5;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(fontSize);
+    pdf.setTextColor(51, 65, 85);
+
+    items.forEach((item) => {
+      const cleanItem = item.replace(/^[-•*]\s*/, "");
+      const lines = pdf.splitTextToSize(cleanItem, BULLET_WIDTH);
+      lines.forEach((line, index) => {
+        checkPage();
+        if (index === 0) pdf.text("•", BULLET_X, y);
+        pdf.text(line, TEXT_X, y);
+        y += lineHeight;
+      });
+    });
+    y += 2;
+  };
+
+  // ── HEADER ──────────────────────────────────────
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(26);
+  pdf.setTextColor(15, 23, 42);
+  pdf.text(form.name || "Full Name", MARGIN, y);
+  y += 8;
+
+  const contact = [form.email, form.phone, form.location].filter(Boolean).join("   •   ");
+  if (contact) {
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(51, 65, 85);
+    pdf.text(contact, MARGIN, y);
+    y += 6;
+  }
+
+  // ── PROFESSIONAL SUMMARY ─────────────────────────
+  if (form.summary) {
+    addSection("Professional Summary");
+    addText(form.summary);
+  }
+
+  // ── SKILLS ───────────────────────────────────────
+  if (form.skills) {
+    addSection("Skills");
+    addText(form.skills);
+  }
+
+  // ── EXPERIENCE ───────────────────────────────────
+  if (form.experience) {
+    addSection("Experience");
+    addBullets(form.experience);
+  }
+
+  // ── EDUCATION ────────────────────────────────────
+  if (form.education) {
+    addSection("Education");
+    addText(form.education);
+  }
+
+  // ── PROJECTS ─────────────────────────────────────
+  if (form.projects) {
+    addSection("Projects");
+    addBullets(form.projects);
+  }
+
+  // ── CERTIFICATIONS ───────────────────────────────
+  if (form.certifications) {
+    addSection("Certifications");
+    addBullets(form.certifications);
+  }
+
+  // ── SAVE ─────────────────────────────────────────
+  const fileName = (form.name || "resume").trim().replace(/[^a-z0-9]/gi, "_").toLowerCase();
+  pdf.save(`${fileName}_resume.pdf`);
+}
+/* ============================================================
+SCORE RING
+============================================================ */
+
+function ScoreRing({ value = 0, size = 110, stroke = 10, label = "Score" }) {
+  const radius = (size - stroke) / 2;
+
+  const circumference = 2 * Math.PI * radius;
+
+  const safeValue = clamp(Number(value) || 0, 0, 100);
+
+  const offset = circumference - (safeValue / 100) * circumference;
+
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        width: size,
+        height: size,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          opacity={0.12}
+        />
+
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        />
+      </svg>
+
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography variant="h5" fontWeight={800}>
+          {Math.round(safeValue)}
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+/* ============================================================
+PROTECTED ROUTE
+============================================================ */
+
+function ProtectedRoute({ children }) {
+  const { user } = useAuth();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+/* ============================================================
+LOGIN
+============================================================ */
+
+function Login() {
+  const navigate = useNavigate();
+
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    setError("");
+
+    if (!email || !password) {
+      setError("Please enter email and password.");
+
+      return;
+    }
+
+    login({
+      name: email.split("@")[0] || "User",
+
+      email,
+    });
+
+    navigate("/dashboard");
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 3,
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            p: 4,
+            borderRadius: 4,
+            boxShadow: 4,
+          }}
+        >
+          <Typography variant="h4" fontWeight={800} mb={1}>
+            Welcome Back
+          </Typography>
+
+          <Typography color="text.secondary" mb={3}>
+            Sign in to your Career AI account.
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Stack spacing={2}>
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+            />
+
+            <Button type="submit" variant="contained" size="large" fullWidth>
+              Login
+            </Button>
+          </Stack>
+
+          <Typography mt={3} textAlign="center">
+            Don't have an account? <Link to="/signup">Sign up</Link>
+          </Typography>
+        </Box>
+      </Container>
+    </Box>
+  );
+}
+
+/* ============================================================
+SIGNUP
+============================================================ */
+
+function Signup() {
+  const navigate = useNavigate();
+
+  const { login } = useAuth();
+
+  const [name, setName] = useState("");
+
+  const [email, setEmail] = useState("");
+
+  const [password, setPassword] = useState("");
+
+  const [error, setError] = useState("");
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    setError("");
+
+    if (!name || !email || !password) {
+      setError("Please fill all fields.");
+
+      return;
+    }
+
+    login({
+      name,
+      email,
+    });
+
+    navigate("/dashboard");
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: 3,
+      }}
+    >
+      <Container maxWidth="sm">
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            p: 4,
+            borderRadius: 4,
+            boxShadow: 4,
+          }}
+        >
+          <Typography variant="h4" fontWeight={800} mb={1}>
+            Create Account
+          </Typography>
+
+          <Typography color="text.secondary" mb={3}>
+            Start your AI-powered career journey.
+          </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <Stack spacing={2}>
+            <TextField
+              label="Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+            />
+
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              fullWidth
+            />
+
+            <Button type="submit" variant="contained" size="large" fullWidth>
+              Create Account
+            </Button>
+          </Stack>
+
+          <Typography mt={3} textAlign="center">
+            Already have an account? <Link to="/login">Login</Link>
+          </Typography>
+        </Box>
+      </Container>
+    </Box>
+  );
+}
+
+/* ============================================================
+LANDING PAGE
+============================================================ */
+
+function Landing() {
+  const navigate = useNavigate();
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        overflow: "hidden",
+      }}
+    >
+      <AppBar position="static" color="transparent" elevation={0}>
+        <Toolbar
+          sx={{
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography variant="h6" fontWeight={800}>
+            Career AI
+          </Typography>
+
+          <Stack direction="row" spacing={1}>
+            <Button onClick={() => navigate("/login")}>Login</Button>
+
+            <Button variant="contained" onClick={() => navigate("/signup")}>
+              Get Started
+            </Button>
+          </Stack>
+        </Toolbar>
+      </AppBar>
+
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: {
+            xs: 8,
+            md: 14,
+          },
+        }}
+      >
+        <Grid container spacing={6} alignItems="center">
+          <Grid item xs={12} md={7}>
+            <Typography
+              variant="h1"
+              sx={{
+                fontSize: {
+                  xs: "2.8rem",
+                  md: "4.8rem",
+                },
+                lineHeight: 1.05,
+              }}
+            >
+              Build your
+              <br />
+              <span className="gradient-text">career with AI</span>
+            </Typography>
+
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{
+                mt: 3,
+                maxWidth: 650,
+                lineHeight: 1.7,
+              }}
+            >
+              Analyze your resume, discover the best career opportunities, build
+              stronger resumes, and practice interviews with AI-powered tools.
+            </Typography>
+
+            <Stack
+              direction={{
+                xs: "column",
+                sm: "row",
+              }}
+              spacing={2}
+              sx={{ mt: 4 }}
+            >
+              <Button
+                size="large"
+                variant="contained"
+                endIcon={<MdArrowForward />}
+                onClick={() => navigate("/signup")}
+              >
+                Start Your Journey
+              </Button>
+
+              <Button
+                size="large"
+                variant="outlined"
+                onClick={() => navigate("/login")}
+              >
+                Sign In
+              </Button>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={12} md={5}>
+            <Box
+              sx={{
+                p: 4,
+                borderRadius: 6,
+                background:
+                  "linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12))",
+                border: "1px solid rgba(124,58,237,.15)",
+              }}
+            >
+              <MdAutoAwesome size={72} />
+
+              <Typography variant="h5" fontWeight={800} mt={2}>
+                AI Career Intelligence
+              </Typography>
+
+              <Typography color="text.secondary" mt={1}>
+                Turn your resume into actionable career insights and
+                personalized recommendations.
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
+  );
+}
+
+/* ============================================================
+DASHBOARD LAYOUT
+============================================================ */
+
+function DashboardLayout() {
+  const { user, logout } = useAuth();
+
+  const { mode, toggleMode } = useThemeMode();
+
+  const navigate = useNavigate();
+
+  const location = useLocation();
+
+  const isMobile = useMediaQuery("(max-width:900px)");
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const [profileAnchor, setProfileAnchor] = useState(null);
+
+  const menuItems = [
+    {
+      label: "Dashboard",
+      path: "/dashboard",
+      icon: <MdSpaceDashboard />,
+    },
+
+    {
+      label: "Analyze Resume",
+      path: "/dashboard/analyze",
+      icon: <MdDescription />,
+    },
+
+    {
+      label: "Resume Builder",
+      path: "/dashboard/resume-builder",
+      icon: <MdEdit />,
+    },
+
+    {
+      label: "Interview",
+      path: "/dashboard/interview",
+      icon: <MdMic />,
+    },
+
+    {
+      label: "Profile",
+      path: "/dashboard/profile",
+      icon: <MdPerson />,
+    },
+
+    {
+      label: "Settings",
+      path: "/dashboard/settings",
+      icon: <MdSettings />,
+    },
+  ];
+
+  const drawerWidth = 270;
+
+  const handleNavigate = (path) => {
+    navigate(path);
+
+    if (isMobile) {
+      setDrawerOpen(false);
+    }
+  };
+
+  const drawerContent = (
+    <Box
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Box
+        sx={{
+          p: 3,
+          pb: 2,
+        }}
+      >
+        <Typography variant="h5" fontWeight={800} className="gradient-text">
+          Career AI
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary">
+          AI Career Intelligence
+        </Typography>
+      </Box>
+
+      <Divider />
+
+      <List
+        sx={{
+          px: 1.5,
+          py: 2,
+        }}
+      >
+        {menuItems.map((item) => {
+          const active =
+            location.pathname === item.path ||
+            (item.path !== "/dashboard" &&
+              location.pathname.startsWith(item.path));
+
+          return (
+            <ListItemButton
+              key={item.path}
+              selected={active}
+              onClick={() => handleNavigate(item.path)}
+              sx={{
+                borderRadius: 2,
+                mb: 0.5,
+
+                "&.Mui-selected": {
+                  background:
+                    "linear-gradient(120deg, rgba(37,99,235,.14), rgba(124,58,237,.14))",
+
+                  color: brandColors.primary,
+
+                  "&:hover": {
+                    background:
+                      "linear-gradient(120deg, rgba(37,99,235,.18), rgba(124,58,237,.18))",
+                  },
+                },
+              }}
+            >
+              <ListItemIcon
+                sx={{
+                  minWidth: 42,
+                  color: active ? brandColors.primary : "inherit",
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          );
+        })}
+      </List>
+
+      <Box sx={{ flex: 1 }} />
+
+      <Box
+        sx={{
+          p: 2,
+        }}
+      >
+        <Box
+          sx={{
+            p: 2,
+            borderRadius: 3,
+            background:
+              mode === "dark" ? "rgba(255,255,255,.04)" : "rgba(15,23,42,.035)",
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <Stack direction="row" spacing={1} alignItems="center">
+              {mode === "dark" ? <MdDarkMode /> : <MdLightMode />}
+
+              <Typography variant="body2">
+                {mode === "dark" ? "Dark mode" : "Light mode"}
+              </Typography>
+            </Stack>
+
+            <Switch
+              checked={mode === "dark"}
+              onChange={toggleMode}
+              size="small"
+            />
+          </Stack>
+        </Box>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+      }}
+    >
+      {isMobile && (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+
+      {!isMobile && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: drawerWidth,
+            flexShrink: 0,
+
+            "& .MuiDrawer-paper": {
+              width: drawerWidth,
+              boxSizing: "border-box",
+              borderRight: "1px solid rgba(15,23,42,.08)",
+            },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
+
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        <AppBar
+          position="sticky"
+          color="inherit"
+          elevation={0}
+          sx={{
+            borderBottom: "1px solid rgba(15,23,42,.08)",
+            backdropFilter: "blur(16px)",
+          }}
+        >
+          <Toolbar>
+            {isMobile && (
+              <IconButton
+                edge="start"
+                onClick={() => setDrawerOpen(true)}
+                sx={{ mr: 1 }}
+              >
+                <MdMenu />
+              </IconButton>
+            )}
+
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Welcome back
+              </Typography>
+
+              <Typography fontWeight={700}>{user?.name || "User"}</Typography>
+            </Box>
+
+            <IconButton>
+              <Badge color="error" variant="dot">
+                <MdNotifications />
+              </Badge>
+            </IconButton>
+
+            <IconButton
+              onClick={(event) => setProfileAnchor(event.currentTarget)}
+              sx={{ ml: 1 }}
+            >
+              <Avatar
+                sx={{
+                  width: 38,
+                  height: 38,
+                  background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+                }}
+              >
+                {(user?.name || "U").charAt(0).toUpperCase()}
+              </Avatar>
+            </IconButton>
+
+            <Menu
+              anchorEl={profileAnchor}
+              open={Boolean(profileAnchor)}
+              onClose={() => setProfileAnchor(null)}
+            >
+              <MenuItem
+                onClick={() => {
+                  setProfileAnchor(null);
+                  navigate("/dashboard/profile");
+                }}
+              >
+                <ListItemIcon>
+                  <MdPerson />
+                </ListItemIcon>
+                Profile
+              </MenuItem>
+
+              <MenuItem
+                onClick={() => {
+                  setProfileAnchor(null);
+                  navigate("/dashboard/settings");
+                }}
+              >
+                <ListItemIcon>
+                  <MdSettings />
+                </ListItemIcon>
+                Settings
+              </MenuItem>
+
+              <Divider />
+
+              <MenuItem
+                onClick={() => {
+                  setProfileAnchor(null);
+                  logout();
+                  navigate("/login");
+                }}
+              >
+                <ListItemIcon>
+                  <MdLogout />
+                </ListItemIcon>
+                Logout
+              </MenuItem>
+            </Menu>
+          </Toolbar>
+        </AppBar>
+
+        <Box
+          component="main"
+          sx={{
+            p: {
+              xs: 2,
+              md: 4,
+            },
+
+            maxWidth: 1600,
+            mx: "auto",
+          }}
+        >
+          <Outlet />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+/* ============================================================
+DASHBOARD
+============================================================ */
+
+function Dashboard() {
+  const navigate = useNavigate();
+
+  const { user } = useAuth();
+
+  const stats = [
+    {
+      label: "Resume Score",
+      value: "—",
+      icon: <MdDescription />,
+      color: brandColors.primary,
+    },
+
+    {
+      label: "Career Matches",
+      value: "—",
+      icon: <MdWorkOutline />,
+      color: brandColors.secondary,
+    },
+
+    {
+      label: "Interviews",
+      value: "0",
+      icon: <MdMic />,
+      color: brandColors.accent,
+    },
+
+    {
+      label: "Skills Tracked",
+      value: "0",
+      icon: <MdTrendingUp />,
+      color: "#10B981",
+    },
+  ];
+
+  const quickActions = [
+    {
+      title: "Analyze Resume",
+      description: "Upload your resume and discover your best career matches.",
+      icon: <MdDescription size={30} />,
+      path: "/dashboard/analyze",
+    },
+
+    {
+      title: "Build Resume",
+      description: "Create a professional, ATS-friendly resume.",
+      icon: <MdEdit size={30} />,
+      path: "/dashboard/resume-builder",
+    },
+
+    {
+      title: "AI Video Interview",
+      description: "Face a dynamic AI interviewer with camera, microphone, and Bedrock-powered evaluation.",
+      icon: <MdMic size={30} />,
+      path: "/dashboard/ai-interview",
+    },
+  ];
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Hello, {user?.name || "there"} 👋
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Let's take the next step in your career.
+        </Typography>
+      </Box>
+
+      <Grid container spacing={2}>
+        {stats.map((stat) => (
+          <Grid item xs={12} sm={6} lg={3} key={stat.label}>
+            <Box
+              sx={{
+                p: 2.5,
+                borderRadius: 3,
+                background: "background.paper",
+                border: "1px solid rgba(15,23,42,.08)",
+                height: "100%",
+              }}
+            >
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="flex-start"
+              >
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {stat.label}
+                  </Typography>
+
+                  <Typography variant="h4" fontWeight={800} mt={1}>
+                    {stat.value}
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: stat.color,
+                    background: `${stat.color}15`,
+                  }}
+                >
+                  {stat.icon}
+                </Box>
+              </Stack>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+
+      <Box>
+        <Typography variant="h5" fontWeight={800} mb={2}>
+          Quick Actions
+        </Typography>
+
+        <Grid container spacing={2}>
+          {quickActions.map((action) => (
+            <Grid item xs={12} md={4} key={action.title}>
+              <Box
+                onClick={() => navigate(action.path)}
+                sx={{
+                  p: 3,
+                  height: "100%",
+                  borderRadius: 3,
+                  cursor: "pointer",
+                  border: "1px solid rgba(15,23,42,.08)",
+                  transition: "all .2s ease",
+
+                  "&:hover": {
+                    transform: "translateY(-3px)",
+                    boxShadow: "0 12px 30px rgba(15,23,42,.08)",
+                  },
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background:
+                      "linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12))",
+                    color: brandColors.primary,
+                    mb: 2,
+                  }}
+                >
+                  {action.icon}
+                </Box>
+
+                <Typography variant="h6" fontWeight={800}>
+                  {action.title}
+                </Typography>
+
+                <Typography color="text.secondary" mt={1}>
+                  {action.description}
+                </Typography>
+
+                <Button sx={{ mt: 2 }} endIcon={<MdArrowForward />}>
+                  Open
+                </Button>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      <Box
+        sx={{
+          p: {
+            xs: 3,
+            md: 4,
+          },
+
+          borderRadius: 4,
+
+          background:
+            "linear-gradient(120deg, rgba(37,99,235,.10), rgba(124,58,237,.12))",
+
+          border: "1px solid rgba(124,58,237,.12)",
+        }}
+      >
+        <Stack
+          direction={{
+            xs: "column",
+            md: "row",
+          }}
+          spacing={3}
+          alignItems={{
+            xs: "flex-start",
+            md: "center",
+          }}
+        >
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h5" fontWeight={800}>
+              Ready to discover your next career move?
+            </Typography>
+
+            <Typography color="text.secondary" mt={1}>
+              Start with a resume analysis and get AI-powered career
+              recommendations.
+            </Typography>
+          </Box>
+
+          <Button
+            variant="contained"
+            size="large"
+            endIcon={<MdArrowForward />}
+            onClick={() => navigate("/dashboard/analyze")}
+          >
+            Analyze My Resume
+          </Button>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+ANALYZE HUB
+============================================================ */
+
+function AnalyzeHub() {
+  const navigate = useNavigate();
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Resume Analysis
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Upload your resume and let AI identify your strongest career
+          direction.
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          p: {
+            xs: 3,
+            md: 5,
+          },
+
+          borderRadius: 4,
+
+          background:
+            "linear-gradient(135deg, rgba(37,99,235,.10), rgba(124,58,237,.10))",
+
+          border: "1px solid rgba(124,58,237,.14)",
+        }}
+      >
+        <Stack alignItems="center" textAlign="center" spacing={2}>
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+              color: "#fff",
+            }}
+          >
+            <MdAutoAwesome size={40} />
+          </Box>
+
+          <Typography variant="h5" fontWeight={800}>
+            AI Resume Analyzer
+          </Typography>
+
+          <Typography color="text.secondary" maxWidth={650}>
+            Our AI reads your resume, extracts your skills and experience, and
+            predicts the career roles that best match your profile.
+          </Typography>
+
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<MdUploadFile />}
+            onClick={() => navigate("/dashboard/analyze/upload")}
+          >
+            Upload Resume
+          </Button>
+        </Stack>
+      </Box>
+
+      <Grid container spacing={2}>
+        {[
+          {
+            icon: <MdCloudUpload />,
+            title: "Upload",
+            text: "Upload your PDF resume securely.",
+          },
+
+          {
+            icon: <MdAutoAwesome />,
+            title: "Analyze",
+            text: "AI extracts and analyzes your resume.",
+          },
+
+          {
+            icon: <MdTrendingUp />,
+            title: "Discover",
+            text: "See your strongest career matches.",
+          },
+        ].map((item) => (
+          <Grid item xs={12} md={4} key={item.title}>
+            <Box
+              sx={{
+                p: 3,
+                height: "100%",
+                borderRadius: 3,
+                border: "1px solid rgba(15,23,42,.08)",
+              }}
+            >
+              <Box
+                sx={{
+                  fontSize: 32,
+                  color: brandColors.primary,
+                }}
+              >
+                {item.icon}
+              </Box>
+
+              <Typography variant="h6" fontWeight={800} mt={2}>
+                {item.title}
+              </Typography>
+
+              <Typography color="text.secondary" mt={1}>
+                {item.text}
+              </Typography>
+            </Box>
+          </Grid>
+        ))}
+      </Grid>
+    </Stack>
+  );
+}
+
+/* ============================================================
+UPLOAD RESUME
+============================================================ */
+
+function UploadResume() {
+  const navigate = useNavigate();
+
+  const [file, setFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [backendStatus, setBackendStatus] = useState(null);
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  const validateFile = (selectedFile) => {
+    if (!selectedFile) {
+      return "Please select a PDF resume.";
+    }
+
+    const isPdf =
+      selectedFile.type === "application/pdf" ||
+      selectedFile.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      return "Only PDF files are supported.";
+    }
+
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      return "File is too large. Maximum size is 5 MB.";
+    }
+
+    return "";
+  };
+
+  const handleFile = (selectedFile) => {
+    setError("");
+
+    const validationError = validateFile(selectedFile);
+
+    if (validationError) {
+      setFile(null);
+      setError(validationError);
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
+  const handleInputChange = (event) => {
+    const selectedFile = event.target.files?.[0];
+
+    if (selectedFile) {
+      handleFile(selectedFile);
+    }
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(false);
+
+    const droppedFile = event.dataTransfer.files?.[0];
+
+    if (droppedFile) {
+      handleFile(droppedFile);
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(false);
+  };
+
+  const checkHealth = async () => {
+    try {
+      setBackendStatus("checking");
+
+      const response = await fetch(HEALTH_URL);
+
+      if (!response.ok) {
+        throw new Error(`Backend returned ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.model_loaded === false) {
+        throw new Error("Backend is running, but the ML model is not loaded.");
+      }
+
+      setBackendStatus("connected");
+
+      return true;
+    } catch (err) {
+      console.error("Backend health check failed:", err);
+
+      setBackendStatus("error");
+
+      setError(`Cannot connect to backend at ${API_BASE_URL}. ${err.message}`);
+
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    checkHealth();
+  }, []);
+
+  const handleAnalyze = async () => {
+    setError("");
+
+    if (!file) {
+      setError("Please select a PDF resume first.");
+      return;
+    }
+
+    const validationError = validateFile(file);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      /*
+       * Check backend before uploading.
+       */
+      const healthy = await checkHealth();
+
+      if (!healthy) {
+        return;
+      }
+
+      /*
+       * Build multipart request.
+       *
+       * IMPORTANT:
+       * Backend expects:
+       *
+       * request.files["file"]
+       *
+       * Therefore the field name MUST be "file".
+       */
+      const formData = new FormData();
+
+      formData.append("file", file);
+
+      const response = await fetch(PREDICT_URL, {
+        method: "POST",
+        body: formData,
+      });
+
+      let data = null;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          `Backend returned an invalid response (${response.status}).`,
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            `Resume analysis failed (${response.status}).`,
+        );
+      }
+
+      if (data.success === false) {
+        throw new Error(
+          data.message || data.error || "Resume analysis failed.",
+        );
+      }
+
+      /*
+       * Store result locally as a backup.
+       */
+      sessionStorage.setItem("resume_analysis_result", JSON.stringify(data));
+
+      /*
+       * Navigate to result page.
+       *
+       * The actual result is also passed through
+       * React Router state.
+       */
+      navigate("/dashboard/analyze/result", {
+        state: {
+          result: data,
+          fileName: file.name,
+        },
+      });
+    } catch (err) {
+      console.error("Resume analysis error:", err);
+
+      setError(err.message || "Unable to analyze the resume.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) {
+      return "0 Bytes";
+    }
+
+    const mb = bytes / (1024 * 1024);
+
+    return `${mb.toFixed(2)} MB`;
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+          <Button
+            startIcon={<MdArrowBack />}
+            onClick={() => navigate("/dashboard/analyze")}
+          >
+            Back
+          </Button>
+        </Stack>
+
+        <Typography variant="h4" fontWeight={800}>
+          Upload Your Resume
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Upload your resume in PDF format and let our AI analyze your career
+          profile.
+        </Typography>
+      </Box>
+
+      {backendStatus === "connected" && (
+        <Alert severity="success" icon={<MdCheckCircle />}>
+          Backend connected successfully.
+        </Alert>
+      )}
+
+      {backendStatus === "checking" && (
+        <Alert severity="info">Checking AI backend connection...</Alert>
+      )}
+
+      {backendStatus === "error" && (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={checkHealth}>
+              Retry
+            </Button>
+          }
+        >
+          Backend connection failed.
+        </Alert>
+      )}
+
+      {error && (
+        <Alert severity="error" onClose={() => setError("")}>
+          {error}
+        </Alert>
+      )}
+
+      <Box
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragOver}
+        onDragLeave={handleDragLeave}
+        sx={{
+          position: "relative",
+
+          minHeight: 360,
+
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+
+          p: 4,
+
+          borderRadius: 4,
+
+          border: dragActive
+            ? `2px dashed ${brandColors.primary}`
+            : "2px dashed rgba(100,116,139,.30)",
+
+          background: dragActive ? "rgba(37,99,235,.06)" : "transparent",
+
+          transition: "all .2s ease",
+        }}
+      >
+        <Stack alignItems="center" textAlign="center" spacing={2}>
+          <Box
+            sx={{
+              width: 90,
+              height: 90,
+              borderRadius: "50%",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              background:
+                "linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12))",
+
+              color: brandColors.primary,
+            }}
+          >
+            <MdCloudUpload size={48} />
+          </Box>
+
+          <Typography variant="h5" fontWeight={800}>
+            Drag & Drop Your Resume
+          </Typography>
+
+          <Typography color="text.secondary">
+            or choose a PDF file from your computer
+          </Typography>
+
+          <Button
+            component="label"
+            variant="outlined"
+            startIcon={<MdUploadFile />}
+          >
+            Choose PDF
+            <input
+              type="file"
+              hidden
+              accept=".pdf,application/pdf"
+              onChange={handleInputChange}
+            />
+          </Button>
+
+          <Typography variant="caption" color="text.secondary">
+            PDF only • Maximum 5 MB
+          </Typography>
+        </Stack>
+      </Box>
+
+      {file && (
+        <Box
+          sx={{
+            p: 3,
+            borderRadius: 3,
+
+            border: "1px solid rgba(15,23,42,.08)",
+          }}
+        >
+          <Stack
+            direction={{
+              xs: "column",
+              sm: "row",
+            }}
+            spacing={2}
+            alignItems={{
+              xs: "flex-start",
+              sm: "center",
+            }}
+          >
+            <Box
+              sx={{
+                width: 52,
+                height: 52,
+                borderRadius: 2,
+
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+
+                background: "rgba(37,99,235,.10)",
+
+                color: brandColors.primary,
+              }}
+            >
+              <MdDescription size={28} />
+            </Box>
+
+            <Box
+              sx={{
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <Typography
+                fontWeight={700}
+                sx={{
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {file.name}
+              </Typography>
+
+              <Typography variant="body2" color="text.secondary">
+                {formatFileSize(file.size)}
+              </Typography>
+            </Box>
+
+            <IconButton
+              color="error"
+              onClick={() => {
+                setFile(null);
+                setError("");
+              }}
+            >
+              <MdDelete />
+            </IconButton>
+          </Stack>
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <Button
+          variant="contained"
+          size="large"
+          disabled={!file || loading || backendStatus === "checking"}
+          onClick={handleAnalyze}
+          startIcon={loading ? undefined : <MdAutoAwesome />}
+          sx={{
+            minWidth: 220,
+          }}
+        >
+          {loading ? "Analyzing..." : "Analyze Resume"}
+        </Button>
+      </Box>
+
+      {loading && (
+        <Box>
+          <LinearProgress />
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            textAlign="center"
+            mt={1}
+          >
+            Extracting text and analyzing your resume...
+          </Typography>
+        </Box>
+      )}
+
+      <Box
+        sx={{
+          p: 3,
+          borderRadius: 3,
+
+          background: "rgba(37,99,235,.05)",
+        }}
+      >
+        <Stack direction="row" spacing={2} alignItems="flex-start">
+          <MdLightbulb size={26} color={brandColors.primary} />
+
+          <Box>
+            <Typography fontWeight={700}>For the best results</Typography>
+
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              Use a clear PDF resume containing your skills, education, work
+              experience, projects, and technical knowledge.
+            </Typography>
+          </Box>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+function ResumeResult() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const reportRef = useRef(null);
+
+  const [result, setResult] = useState(location.state?.result || null);
+  const [fileName, setFileName] = useState(location.state?.fileName || "");
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (result) return;
+    try {
+      const saved = sessionStorage.getItem("resume_analysis_result");
+      if (saved) setResult(JSON.parse(saved));
+    } catch (err) {
+      console.error("Unable to restore result:", err);
+    }
+  }, [result]);
+
+  useEffect(() => {
+    if (location.state?.fileName) setFileName(location.state.fileName);
+  }, [location.state]);
+
+  // ── SINGLE-SHEET PDF EXPORT (scales to fit one page) ──
+  const handleExport = async () => {
+    if (!reportRef.current) {
+      setError("Unable to export the result.");
+      return;
+    }
+    setExporting(true);
+    setError("");
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+      const imageData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      // Scale the whole canvas down to fit within ONE page, no splitting
+      const widthRatio = pageWidth / canvas.width;
+      const heightRatio = pageHeight / canvas.height;
+      const ratio = Math.min(widthRatio, heightRatio);
+
+      const imgWidth = canvas.width * ratio;
+      const imgHeight = canvas.height * ratio;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = 0;
+
+      pdf.addImage(imageData, "PNG", x, y, imgWidth, imgHeight);
+      pdf.save("career-ai-resume-analysis.pdf");
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      setError(err.message || "Failed to export PDF.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (!result) {
+    return (
+      <Stack spacing={3} alignItems="center" sx={{ py: 8 }}>
+        <MdDescription size={64} color={brandColors.primary} />
+        <Typography variant="h5" fontWeight={800}>No Resume Analysis Found</Typography>
+        <Typography color="text.secondary" textAlign="center">
+          Please upload a resume to generate an AI career analysis.
+        </Typography>
+        <Button variant="contained" startIcon={<MdUploadFile />} onClick={() => navigate("/dashboard/analyze/upload")}>
+          Upload Resume
+        </Button>
+      </Stack>
+    );
+  }
+
+  const predictedCareer = result.predicted_career || "Not available";
+  const atsScore = result.ats_score ?? 0;
+  const matchingPercentage = result.matching_percentage ?? 0;
+  const foundSkills = Array.isArray(result.found_skills) ? result.found_skills : [];
+  const missingSkills = Array.isArray(result.missing_skills) ? result.missing_skills : [];
+  const strengths = Array.isArray(result.strengths) ? result.strengths : [];
+  const weaknesses = Array.isArray(result.weaknesses) ? result.weaknesses : [];
+  const suggestions = Array.isArray(result.suggestions) ? result.suggestions : [];
+
+  const top3 = Array.isArray(result.top_3) ? result.top_3 : [];
+  const normalizedTop3 = top3.map((item, index) => ({
+    role: item?.role || `Career ${index + 1}`,
+    fitPercent: item?.skill_fit_percent ?? 0,
+  }));
+
+  return (
+    <Stack spacing={4}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "flex-start", sm: "center" }}>
+        <Button startIcon={<MdArrowBack />} onClick={() => navigate("/dashboard/analyze")}>Back</Button>
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h4" fontWeight={800}>Resume Analysis Result</Typography>
+          {fileName && <Typography color="text.secondary" mt={0.5}>{fileName}</Typography>}
+        </Box>
+        <Button variant="outlined" startIcon={<MdDownload />} disabled={exporting} onClick={handleExport}>
+          {exporting ? "Exporting..." : "Export PDF"}
+        </Button>
+      </Stack>
+
+      {error && <Alert severity="error" onClose={() => setError("")}>{error}</Alert>}
+
+      <Box ref={reportRef} sx={{ p: { xs: 2, md: 4 }, background: "background.paper" }}>
+
+        {/* Prediction header */}
+        <Box sx={{ p: { xs: 3, md: 5 }, borderRadius: 4,
+          background: "linear-gradient(135deg, rgba(37,99,235,.10), rgba(124,58,237,.10))",
+          border: "1px solid rgba(124,58,237,.12)" }}>
+          <Typography variant="overline" color="primary" fontWeight={800}>AI Career Prediction</Typography>
+          <Typography variant="h3" fontWeight={800} mt={1} sx={{ fontSize: { xs: "2rem", md: "3rem" } }}>
+            {predictedCareer}
+          </Typography>
+          <Typography color="text.secondary" mt={1}>
+            Based on the skills and experience extracted from your resume.
+          </Typography>
+        </Box>
+
+        {/* Score rings */}
+        <Grid container spacing={3} mt={1}>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", textAlign: "center" }}>
+              <Typography fontWeight={700} mb={1}>ATS Score</Typography>
+              <ScoreRing value={atsScore} label="/ 100" />
+            </Box>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", textAlign: "center" }}>
+              <Typography fontWeight={700} mb={1}>Matching Percentage</Typography>
+              <ScoreRing value={matchingPercentage} label={`vs. ${predictedCareer}`} />
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Top career matches */}
+        <Box mt={4}>
+          <Typography variant="h5" fontWeight={800} mb={2}>Top Career Matches</Typography>
+          {normalizedTop3.length === 0 ? (
+            <Alert severity="info">No top career matches were returned by the backend.</Alert>
+          ) : (
+            <Grid container spacing={2}>
+              {normalizedTop3.map((item, index) => (
+                <Grid item xs={12} md={4} key={`${item.role}-${index}`}>
+                  <Box sx={{ p: 3, height: "100%", borderRadius: 3, border: "1px solid rgba(15,23,42,.08)" }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                      <Chip label={`#${index + 1}`} color={index === 0 ? "primary" : "default"} />
+                      <Typography fontWeight={800} color="primary">{item.fitPercent}%</Typography>
+                    </Stack>
+                    <Typography variant="h6" fontWeight={800} mt={3}>{item.role}</Typography>
+                    <Box mt={2}>
+                      <LinearProgress variant="determinate" value={clamp(item.fitPercent, 0, 100)} />
+                    </Box>
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </Box>
+
+{/* Skills found / missing */}
+<Grid container spacing={2} mt={2}>
+  <Grid item xs={12} md={6}>
+    <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+      <Typography variant="h6" fontWeight={800} mb={2}>Skills Found</Typography>
+      {foundSkills.length === 0 ? (
+        <Typography color="text.secondary">No skills detected.</Typography>
+      ) : (
+        <Box sx={{ display: "flex", flexWrap: "wrap", mx: -0.5, my: -0.5 }}>
+          {foundSkills.map((skill) => (
+            <Chip
+              key={skill}
+              label={skill}
+              color="primary"
+              variant="outlined"
+              size="small"
+              sx={{
+                m: 0.5,
+                fontWeight: 600,
+                borderRadius: "8px",
+                textTransform: "capitalize",
+              }}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+      <Typography variant="h6" fontWeight={800} mb={2}>Missing Skills</Typography>
+      {missingSkills.length === 0 ? (
+        <Typography color="text.secondary">No major gaps detected.</Typography>
+      ) : (
+        <Box sx={{ display: "flex", flexWrap: "wrap", mx: -0.5, my: -0.5 }}>
+          {missingSkills.map((skill) => (
+            <Chip
+              key={skill}
+              label={skill}
+              color="error"
+              variant="outlined"
+              size="small"
+              sx={{
+                m: 0.5,
+                fontWeight: 600,
+                borderRadius: "8px",
+                textTransform: "capitalize",
+              }}
+            />
+          ))}
+        </Box>
+      )}
+    </Box>
+  </Grid>
+</Grid>
+
+        {/* Strengths / weaknesses */}
+        <Grid container spacing={2} mt={2}>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+              <Typography variant="h6" fontWeight={800} mb={2}>Resume Strength</Typography>
+              <Stack spacing={1}>
+                {strengths.map((s, i) => (
+                  <Stack direction="row" spacing={1} key={i} alignItems="flex-start">
+                    <MdCheckCircle color="#10B981" />
+                    <Typography variant="body2">{s}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)", height: "100%" }}>
+              <Typography variant="h6" fontWeight={800} mb={2}>Weaknesses</Typography>
+              <Stack spacing={1}>
+                {weaknesses.map((w, i) => (
+                  <Stack direction="row" spacing={1} key={i} alignItems="flex-start">
+                    <MdCancel color="#EF4444" />
+                    <Typography variant="body2">{w}</Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Suggestions */}
+        <Box mt={2}>
+          <Box sx={{ p: 3, borderRadius: 3, border: "1px solid rgba(15,23,42,.08)" }}>
+            <Typography variant="h6" fontWeight={800} mb={2}>Suggested Improvements</Typography>
+            <Stack spacing={1}>
+              {suggestions.map((s, i) => (
+                <Stack direction="row" spacing={1} key={i} alignItems="flex-start">
+                  <MdLightbulb color={brandColors.primary} />
+                  <Typography variant="body2">{s}</Typography>
+                </Stack>
+              ))}
+            </Stack>
+          </Box>
+        </Box>
+      </Box>
+
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="center">
+        <Button variant="contained" startIcon={<MdUploadFile />} onClick={() => navigate("/dashboard/analyze/upload")}>
+          Analyze Another Resume
+        </Button>
+        <Button variant="outlined" onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
+      </Stack>
+    </Stack>
+  );
+}
+/* ============================================================
+RESUME BUILDER
+============================================================ */
+
+function ResumeBuilder() {
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    summary: "",
+    skills: "",
+    experience: "",
+    education: "",
+    projects: "",
+    certifications: "",
+  });
+
+  const [preview, setPreview] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+  };
+
+  const handlePreview = () => {
+    setPreview(true);
+  };
+
+  const handleReset = () => {
+    setForm({
+      name: "",
+      email: "",
+      phone: "",
+      location: "",
+      summary: "",
+      skills: "",
+      experience: "",
+      education: "",
+      projects: "",
+      certifications: "",
+    });
+
+    setPreview(false);
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Resume Builder
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Build a clean, professional resume using your career information.
+        </Typography>
+      </Box>
+
+      {!preview ? (
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={8}>
+            <Stack spacing={3}>
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Personal Information
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Full Name"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Phone"
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Location"
+                      name="location"
+                      value={form.location}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Professional Summary
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={5}
+                  label="Professional Summary"
+                  name="summary"
+                  value={form.summary}
+                  onChange={handleChange}
+                  placeholder="Write a short professional summary..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Skills
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={4}
+                  label="Skills"
+                  name="skills"
+                  value={form.skills}
+                  onChange={handleChange}
+                  placeholder="Linux, AWS, Docker, Kubernetes, Python..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Experience
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={7}
+                  label="Work Experience"
+                  name="experience"
+                  value={form.experience}
+                  onChange={handleChange}
+                  placeholder="Company, role, responsibilities, achievements..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Education
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={5}
+                  label="Education"
+                  name="education"
+                  value={form.education}
+                  onChange={handleChange}
+                  placeholder="Degree, university, year..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Projects
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={6}
+                  label="Projects"
+                  name="projects"
+                  value={form.projects}
+                  onChange={handleChange}
+                  placeholder="Project name, technologies, description..."
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  p: 3,
+                  borderRadius: 3,
+                  border: "1px solid rgba(15,23,42,.08)",
+                }}
+              >
+                <Typography variant="h6" fontWeight={800} mb={2}>
+                  Certifications
+                </Typography>
+
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={4}
+                  label="Certifications"
+                  name="certifications"
+                  value={form.certifications}
+                  onChange={handleChange}
+                  placeholder="Certification name, organization, year..."
+                />
+              </Box>
+
+              <Stack direction="row" spacing={2} justifyContent="flex-end">
+                <Button variant="outlined" onClick={handleReset}>
+                  Reset
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={handlePreview}
+                  endIcon={<MdArrowForward />}
+                >
+                  Preview Resume
+                </Button>
+              </Stack>
+            </Stack>
+          </Grid>
+
+          <Grid item xs={12} lg={4}>
+            <Box
+              sx={{
+                p: 3,
+                borderRadius: 3,
+
+                background:
+                  "linear-gradient(135deg, rgba(37,99,235,.08), rgba(124,58,237,.08))",
+              }}
+            >
+              <MdAutoAwesome size={32} color={brandColors.primary} />
+
+              <Typography variant="h6" fontWeight={800} mt={2}>
+                Resume Tips
+              </Typography>
+
+              <Stack spacing={2} mt={2}>
+                {[
+                  "Keep your summary concise and focused.",
+                  "Use measurable achievements where possible.",
+                  "List relevant technical and soft skills.",
+                  "Keep experience descriptions action-oriented.",
+                  "Use keywords related to your target role.",
+                ].map((tip) => (
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    key={tip}
+                    alignItems="flex-start"
+                  >
+                    <MdCheckCircle color={brandColors.primary} />
+
+                    <Typography variant="body2" color="text.secondary">
+                      {tip}
+                    </Typography>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          </Grid>
+        </Grid>
+      ) : (
+        <Stack spacing={3}>
+          <Stack
+            direction={{
+              xs: "column",
+              sm: "row",
+            }}
+            spacing={2}
+            justifyContent="space-between"
+          >
+            <Button
+              startIcon={<MdArrowBack />}
+              onClick={() => setPreview(false)}
+            >
+              Edit Resume
+            </Button>
+
+            <Button
+              variant="contained"
+              startIcon={<MdDownload />}
+              onClick={() => exportResumeToPdf(form)}
+            >
+              Download Resume PDF
+            </Button>
+          </Stack>
+
+          <Box
+            sx={{
+              maxWidth: 900,
+              width: "100%",
+              mx: "auto",
+              p: {
+                xs: 3,
+                md: 6,
+              },
+
+              background: "#fff",
+
+              color: "#111827",
+
+              boxShadow: "0 10px 40px rgba(15,23,42,.12)",
+            }}
+          >
+            <Typography variant="h3" fontWeight={800}>
+              {form.name || "Your Name"}
+            </Typography>
+
+            <Stack direction="row" spacing={2} flexWrap="wrap" mt={1}>
+              {form.email && (
+                <Typography variant="body2">{form.email}</Typography>
+              )}
+
+              {form.phone && (
+                <Typography variant="body2">{form.phone}</Typography>
+              )}
+
+              {form.location && (
+                <Typography variant="body2">{form.location}</Typography>
+              )}
+            </Stack>
+
+            {form.summary && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  PROFESSIONAL SUMMARY
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.summary}
+                </Typography>
+              </Box>
+            )}
+
+            {form.skills && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  SKILLS
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.skills}
+                </Typography>
+              </Box>
+            )}
+
+            {form.experience && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  EXPERIENCE
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.experience}
+                </Typography>
+              </Box>
+            )}
+
+            {form.education && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  EDUCATION
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.education}
+                </Typography>
+              </Box>
+            )}
+
+            {form.certifications && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  CERTIFICATIONS
+                </Typography>
+                <Divider sx={{ my: 1 }} />
+                <Typography sx={{ whiteSpace: "pre-line" }}>
+                  {form.certifications}
+                </Typography>
+              </Box>
+            )}
+
+            {form.projects && (
+              <Box mt={4}>
+                <Typography variant="h6" fontWeight={800}>
+                  PROJECTS
+                </Typography>
+
+                <Divider sx={{ my: 1 }} />
+
+                <Typography
+                  sx={{
+                    whiteSpace: "pre-line",
+                  }}
+                >
+                  {form.projects}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Stack>
+      )}
+    </Stack>
+  );
+}
+
+/* ============================================================
+INTERVIEW SETUP
+============================================================ */
+
+function InterviewSetup() {
+  const navigate = useNavigate();
+
+  const [role, setRole] = useState("");
+
+  const [difficulty, setDifficulty] = useState("Intermediate");
+
+  const [questionCount, setQuestionCount] = useState(5);
+
+  const handleStart = () => {
+    if (!role.trim()) {
+      return;
+    }
+
+    sessionStorage.setItem(
+      "interview_setup",
+      JSON.stringify({
+        role,
+        difficulty,
+        questionCount,
+      }),
+    );
+
+    navigate("/dashboard/interview/session");
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          AI Interview Practice
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Configure your mock interview and practice questions tailored to your
+          target role.
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          maxWidth: 720,
+          width: "100%",
+          mx: "auto",
+          p: {
+            xs: 3,
+            md: 5,
+          },
+
+          borderRadius: 4,
+
+          border: "1px solid rgba(15,23,42,.08)",
+        }}
+      >
+        <Stack spacing={3}>
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+
+              background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+
+              color: "#fff",
+            }}
+          >
+            <MdMic size={34} />
+          </Box>
+
+          <TextField
+            fullWidth
+            label="Target Role"
+            value={role}
+            onChange={(event) => setRole(event.target.value)}
+            placeholder="e.g. DevOps Engineer"
+          />
+
+          <TextField
+            select
+            fullWidth
+            label="Difficulty"
+            value={difficulty}
+            onChange={(event) => setDifficulty(event.target.value)}
+          >
+            <MenuItem value="Beginner">Beginner</MenuItem>
+
+            <MenuItem value="Intermediate">Intermediate</MenuItem>
+
+            <MenuItem value="Advanced">Advanced</MenuItem>
+          </TextField>
+
+          <TextField
+            select
+            fullWidth
+            label="Number of Questions"
+            value={questionCount}
+            onChange={(event) => setQuestionCount(Number(event.target.value))}
+          >
+            <MenuItem value={5}>5 Questions</MenuItem>
+
+            <MenuItem value={10}>10 Questions</MenuItem>
+
+            <MenuItem value={15}>15 Questions</MenuItem>
+          </TextField>
+
+          <Button
+            variant="contained"
+            size="large"
+            disabled={!role.trim()}
+            onClick={handleStart}
+            endIcon={<MdArrowForward />}
+          >
+            Start Interview
+          </Button>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+INTERVIEW SESSION
+============================================================ */
+
+function InterviewSession() {
+  const navigate = useNavigate();
+
+  const [setup, setSetup] = useState(null);
+
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const [answer, setAnswer] = useState("");
+
+  const [answers, setAnswers] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("interview_setup");
+
+      if (saved) {
+        setSetup(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error("Unable to load interview setup:", error);
+    }
+  }, []);
+
+  const questions = [
+    "Tell me about yourself and your professional background.",
+
+    "What are your strongest technical skills?",
+
+    "Describe a challenging technical problem you solved.",
+
+    "How do you troubleshoot a production issue?",
+
+    "How do you continuously improve your technical knowledge?",
+
+    "Describe a project where you worked with a team.",
+
+    "How do you handle pressure during a production incident?",
+
+    "What is your approach to automation and reducing manual work?",
+
+    "How do you monitor application and infrastructure health?",
+
+    "Why are you interested in this role?",
+  ];
+
+  const totalQuestions = setup?.questionCount || 5;
+
+  const activeQuestions = questions.slice(0, totalQuestions);
+
+  const question = activeQuestions[currentQuestion] || questions[0];
+
+  const handleNext = () => {
+    const updatedAnswers = [
+      ...answers,
+      {
+        question,
+        answer,
+      },
+    ];
+
+    setAnswers(updatedAnswers);
+
+    setAnswer("");
+
+    if (currentQuestion >= activeQuestions.length - 1) {
+      sessionStorage.setItem(
+        "interview_answers",
+        JSON.stringify(updatedAnswers),
+      );
+
+      navigate("/dashboard/interview/result");
+
+      return;
+    }
+
+    setCurrentQuestion((previous) => previous + 1);
+  };
+
+  if (!setup) {
+    return (
+      <Stack spacing={3} alignItems="center" sx={{ py: 8 }}>
+        <CircularProgress />
+
+        <Typography color="text.secondary">Loading interview...</Typography>
+      </Stack>
+    );
+  }
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Interview Session
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          {setup.role} • {setup.difficulty}
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          maxWidth: 850,
+          width: "100%",
+          mx: "auto",
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" mb={1}>
+          <Typography variant="body2" color="text.secondary">
+            Question {currentQuestion + 1} of {activeQuestions.length}
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary">
+            {Math.round(((currentQuestion + 1) / activeQuestions.length) * 100)}
+            %
+          </Typography>
+        </Stack>
+
+        <LinearProgress
+          variant="determinate"
+          value={((currentQuestion + 1) / activeQuestions.length) * 100}
+        />
+
+        <Box
+          sx={{
+            mt: 3,
+            p: {
+              xs: 3,
+              md: 5,
+            },
+
+            borderRadius: 4,
+
+            border: "1px solid rgba(15,23,42,.08)",
+          }}
+        >
+          <Chip label={setup.role} color="primary" size="small" />
+
+          <Typography variant="h5" fontWeight={800} mt={3}>
+            {question}
+          </Typography>
+
+          <TextField
+            fullWidth
+            multiline
+            minRows={10}
+            value={answer}
+            onChange={(event) => setAnswer(event.target.value)}
+            placeholder="Type your answer here..."
+            sx={{ mt: 3 }}
+          />
+
+          <Stack direction="row" justifyContent="flex-end" mt={3}>
+            <Button
+              variant="contained"
+              disabled={!answer.trim()}
+              onClick={handleNext}
+              endIcon={<MdArrowForward />}
+            >
+              {currentQuestion >= activeQuestions.length - 1
+                ? "Finish Interview"
+                : "Next Question"}
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+INTERVIEW RESULT
+============================================================ */
+
+function InterviewResult() {
+  const navigate = useNavigate();
+
+  const [answers, setAnswers] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("interview_answers");
+
+      if (saved) {
+        setAnswers(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error("Unable to load interview answers:", error);
+    }
+  }, []);
+
+  const calculateScore = () => {
+    if (!answers.length) {
+      return 0;
+    }
+
+    const answered = answers.filter(
+      (item) => item.answer && item.answer.trim().length > 20,
+    ).length;
+
+    return Math.round((answered / answers.length) * 100);
+  };
+
+  const score = calculateScore();
+
+  const getFeedback = () => {
+    if (score >= 80) {
+      return {
+        title: "Excellent performance!",
+        text: "Your answers show strong preparation and confidence. Continue practicing role-specific questions to improve further.",
+      };
+    }
+
+    if (score >= 60) {
+      return {
+        title: "Good performance!",
+        text: "You have a solid foundation. Focus on providing more detailed examples and measurable achievements.",
+      };
+    }
+
+    return {
+      title: "Keep practicing!",
+      text: "Practice explaining your technical experience with clear examples, actions, and results.",
+    };
+  };
+
+  const feedback = getFeedback();
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Interview Result
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Review your interview answers and identify areas for improvement.
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          maxWidth: 800,
+          width: "100%",
+          mx: "auto",
+        }}
+      >
+        <Box
+          sx={{
+            p: {
+              xs: 3,
+              md: 5,
+            },
+
+            borderRadius: 4,
+
+            background:
+              "linear-gradient(135deg, rgba(37,99,235,.10), rgba(124,58,237,.10))",
+
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="overline" color="primary" fontWeight={800}>
+            Interview Score
+          </Typography>
+
+          <Typography variant="h1" fontWeight={900} mt={1}>
+            {score}%
+          </Typography>
+
+          <Typography variant="h5" fontWeight={800} mt={1}>
+            {feedback.title}
+          </Typography>
+
+          <Typography color="text.secondary" mt={1} maxWidth={600} mx="auto">
+            {feedback.text}
+          </Typography>
+        </Box>
+
+        <Box mt={4}>
+          <Typography variant="h5" fontWeight={800} mb={2}>
+            Your Answers
+          </Typography>
+
+          {answers.length === 0 ? (
+            <Alert severity="info">No interview answers were found.</Alert>
+          ) : (
+            <Stack spacing={2}>
+              {answers.map((item, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    p: 3,
+                    borderRadius: 3,
+
+                    border: "1px solid rgba(15,23,42,.08)",
+                  }}
+                >
+                  <Typography variant="subtitle1" fontWeight={800}>
+                    {index + 1}. {item.question}
+                  </Typography>
+
+                  <Typography
+                    color="text.secondary"
+                    mt={2}
+                    sx={{
+                      whiteSpace: "pre-line",
+                    }}
+                  >
+                    {item.answer || "No answer provided."}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </Box>
+
+        <Stack
+          direction={{
+            xs: "column",
+            sm: "row",
+          }}
+          spacing={2}
+          justifyContent="center"
+          mt={4}
+        >
+          <Button
+            variant="contained"
+            startIcon={<MdRefresh />}
+            onClick={() => navigate("/dashboard/interview")}
+          >
+            Practice Again
+          </Button>
+
+          <Button variant="outlined" onClick={() => navigate("/dashboard")}>
+            Dashboard
+          </Button>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+PROFILE
+============================================================ */
+
+function Profile() {
+  const { user } = useAuth();
+
+  const [name, setName] = useState(user?.name || "");
+
+  const [email, setEmail] = useState(user?.email || "");
+
+  const [phone, setPhone] = useState(user?.phone || "");
+
+  const [location, setLocation] = useState(user?.location || "");
+
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    const profile = {
+      name,
+      email,
+      phone,
+      location,
+    };
+
+    localStorage.setItem("career_ai_profile", JSON.stringify(profile));
+
+    setSaved(true);
+
+    setTimeout(() => {
+      setSaved(false);
+    }, 2500);
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Profile
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Manage your personal career information.
+        </Typography>
+      </Box>
+
+      {saved && (
+        <Alert severity="success" icon={<MdCheckCircle />}>
+          Profile updated successfully.
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          maxWidth: 800,
+          width: "100%",
+          mx: "auto",
+          p: {
+            xs: 3,
+            md: 5,
+          },
+
+          borderRadius: 4,
+
+          border: "1px solid rgba(15,23,42,.08)",
+        }}
+      >
+        <Stack spacing={3} alignItems="center">
+          <Avatar
+            sx={{
+              width: 96,
+              height: 96,
+              fontSize: 36,
+
+              background: "linear-gradient(120deg, #2563EB, #7C3AED)",
+            }}
+          >
+            {(name || "U").charAt(0).toUpperCase()}
+          </Avatar>
+
+          <Typography variant="h5" fontWeight={800}>
+            {name || "Your Profile"}
+          </Typography>
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Full Name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Phone"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+              />
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Location"
+                value={location}
+                onChange={(event) => setLocation(event.target.value)}
+              />
+            </Grid>
+          </Grid>
+
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              variant="contained"
+              startIcon={<MdSave />}
+              onClick={handleSave}
+            >
+              Save Profile
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+SETTINGS
+============================================================ */
+
+function Settings() {
+  const { mode, toggleMode } = useThemeMode();
+
+  const [emailNotifications, setEmailNotifications] = useState(true);
+
+  const [interviewReminders, setInterviewReminders] = useState(true);
+
+  const [resumeSuggestions, setResumeSuggestions] = useState(true);
+
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedSettings = localStorage.getItem("career_ai_settings");
+
+      if (!savedSettings) {
+        return;
+      }
+
+      const settings = JSON.parse(savedSettings);
+
+      if (typeof settings.emailNotifications === "boolean") {
+        setEmailNotifications(settings.emailNotifications);
+      }
+
+      if (typeof settings.interviewReminders === "boolean") {
+        setInterviewReminders(settings.interviewReminders);
+      }
+
+      if (typeof settings.resumeSuggestions === "boolean") {
+        setResumeSuggestions(settings.resumeSuggestions);
+      }
+    } catch (error) {
+      console.error("Unable to load settings:", error);
+    }
+  }, []);
+
+  const handleSave = () => {
+    localStorage.setItem(
+      "career_ai_settings",
+      JSON.stringify({
+        emailNotifications,
+        interviewReminders,
+        resumeSuggestions,
+      }),
+    );
+
+    setSaved(true);
+
+    setTimeout(() => {
+      setSaved(false);
+    }, 2500);
+  };
+
+  return (
+    <Stack spacing={4}>
+      <Box>
+        <Typography variant="h4" fontWeight={800}>
+          Settings
+        </Typography>
+
+        <Typography color="text.secondary" mt={1}>
+          Customize your Career AI experience.
+        </Typography>
+      </Box>
+
+      {saved && (
+        <Alert severity="success" icon={<MdCheckCircle />}>
+          Settings saved successfully.
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          maxWidth: 800,
+          width: "100%",
+          mx: "auto",
+        }}
+      >
+        <Stack spacing={2}>
+          <Box
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              border: "1px solid rgba(15,23,42,.08)",
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Stack direction="row" spacing={2} alignItems="center">
+                {mode === "dark" ? (
+                  <MdDarkMode size={25} />
+                ) : (
+                  <MdLightMode size={25} />
+                )}
+
+                <Box>
+                  <Typography fontWeight={800}>Appearance</Typography>
+
+                  <Typography variant="body2" color="text.secondary">
+                    Switch between light and dark mode.
+                  </Typography>
+                </Box>
+              </Stack>
+
+              <Switch checked={mode === "dark"} onChange={toggleMode} />
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              border: "1px solid rgba(15,23,42,.08)",
+            }}
+          >
+            <Typography variant="h6" fontWeight={800} mb={2}>
+              Notifications
+            </Typography>
+
+            <Stack spacing={1}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={emailNotifications}
+                    onChange={(event) =>
+                      setEmailNotifications(event.target.checked)
+                    }
+                  />
+                }
+                label="Email notifications"
+              />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={interviewReminders}
+                    onChange={(event) =>
+                      setInterviewReminders(event.target.checked)
+                    }
+                  />
+                }
+                label="Interview reminders"
+              />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={resumeSuggestions}
+                    onChange={(event) =>
+                      setResumeSuggestions(event.target.checked)
+                    }
+                  />
+                }
+                label="Resume recommendations"
+              />
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button
+              variant="contained"
+              startIcon={<MdSave />}
+              onClick={handleSave}
+            >
+              Save Settings
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
+    </Stack>
+  );
+}
+
+/* ============================================================
+ERROR FALLBACK
+============================================================ */
+
+function ErrorFallback() {
+  const navigate = useNavigate();
+
+  return (
+    <Box
+      sx={{
+        minHeight: "60vh",
+
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+
+        p: 3,
+      }}
+    >
+      <Stack spacing={2} alignItems="center" textAlign="center">
+        <Box
+          sx={{
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+
+            background: "rgba(239,68,68,.10)",
+
+            color: "#EF4444",
+          }}
+        >
+          <MdError size={42} />
+        </Box>
+
+        <Typography variant="h5" fontWeight={800}>
+          Something went wrong
+        </Typography>
+
+        <Typography color="text.secondary">
+          Please try again or return to the dashboard.
+        </Typography>
+
+        <Button variant="contained" onClick={() => navigate("/dashboard")}>
+          Go to Dashboard
+        </Button>
+      </Stack>
+    </Box>
+  );
+}
+
+/* ============================================================
+PART 5 ENDS HERE
+============================================================ */
+/* ============================================================
+MAIN APP
+============================================================ */
+
+function App() {
+  return (
+    <ThemeModeProvider>
+      <AuthProvider>
+        <CssBaseline />
+
+        <GlobalStyleTag />
+
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeModeProvider>
+  );
+}
+
+/* ============================================================
+APP ROUTES
+============================================================ */
+
+function AppRoutes() {
+  const location = useLocation();
+
+  useGoogleFonts();
+
+  return (
+    <Routes>
+      {/* ======================================================
+      PUBLIC ROUTES
+  ====================================================== */}
+
+      <Route path="/" element={<Landing />} />
+
+      <Route path="/login" element={<Login />} />
+
+      <Route path="/signup" element={<Signup />} />
+
+      {/* ======================================================
+      DASHBOARD
+  ====================================================== */}
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard home */}
+
+        <Route index element={<Dashboard />} />
+
+        {/* ====================================================
+        RESUME ANALYZER
+    ==================================================== */}
+
+        <Route path="analyze" element={<AnalyzeHub />} />
+
+        <Route path="analyze/upload" element={<UploadResume />} />
+
+        <Route path="analyze/result" element={<ResumeResult />} />
+
+        {/* ====================================================
+        RESUME BUILDER
+    ==================================================== */}
+
+        <Route path="resume-builder" element={<ResumeBuilder />} />
+
+        {/* ====================================================
+        INTERVIEW
+    ==================================================== */}
+
+        <Route path="interview" element={<InterviewSetup />} />
+
+        <Route path="interview/session" element={<InterviewSession />} />
+
+        <Route path="interview/result" element={<InterviewResult />} />
+
+        <Route path="ai-interview" element={<AIVideoInterview />} />
+
+        {/* ====================================================
+        PROFILE
+    ==================================================== */}
+
+        <Route path="profile" element={<Profile />} />
+
+        {/* ====================================================
+        SETTINGS
+    ==================================================== */}
+
+        <Route path="settings" element={<Settings />} />
+      </Route>
+
+      {/* ======================================================
+      FALLBACK ROUTE
+  ====================================================== */}
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+/* ============================================================
+FINAL EXPORT
+============================================================ */
+
+export default App;

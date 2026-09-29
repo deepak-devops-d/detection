@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: career-ai-config
+  namespace: career-ai-prod
+data:
+  AWS_REGION: "us-east-1"
+  BEDROCK_MODEL_ID: "REPLACE_WITH_ENABLED_BEDROCK_MODEL_ID"
+  CORS_ORIGINS: "https://app.example.com"
+  APP_ENV: "production"
+  API_BASE_URL: "https://api.example.com"
+  INTERVIEW_TABLE_NAME: "career-ai-interviews-prod"
+  INTERVIEW_MEDIA_BUCKET: "REPLACE_WITH_INTERVIEW_MEDIA_BUCKET"
+  INTERVIEW_MEDIA_PREFIX: "interviews"
+  TRANSCRIBE_LANGUAGE_CODE: "en-US"

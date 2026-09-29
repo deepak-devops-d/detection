@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: career-ai-backend
+  namespace: career-ai-prod
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: career-ai-backend
+  template:
+    metadata:
+      labels:
+        app: career-ai-backend
+    spec:
+      serviceAccountName: career-ai-backend
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: 114354606708.dkr.ecr.ap-south-1.amazonaws.com/career-ai/backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: career-ai-config
+            - secretRef:
+                name: career-ai-secrets
+                optional: true
+          env:
+            - name: MODEL_PATH
+              value: /app/models
+            - name: PORT
+              value: "5000"
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: career-ai-backend
+  namespace: career-ai-prod
+spec:
+  type: ClusterIP
+  selector:
+    app: career-ai-backend
+  ports:
+    - name: http
+      port: 5000
+      targetPort: http

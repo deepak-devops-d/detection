@@ -1,0 +1,96 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: career-ai-ingress
+  namespace: career-ai-prod
+
+  annotations:
+    kubernetes.io/ingress.class: alb
+
+    # Internet-facing ALB
+    alb.ingress.kubernetes.io/scheme: internet-facing
+
+    # Route directly to pod IPs
+    alb.ingress.kubernetes.io/target-type: ip
+
+    # HTTP + HTTPS listeners
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+
+    # Redirect HTTP to HTTPS
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+
+    # ACM certificate
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:ap-south-1:114354606708:certificate/5af168e0-7591-4ef6-8f68-ad8e59a05c52"
+
+    # AWS WAF
+    alb.ingress.kubernetes.io/wafv2-acl-arn: "arn:aws:wafv2:ap-south-1:regional/webacl/career-ai-prod-waf/fb0af609-68a1-44ca-a8df-130f1eae9bc4"
+
+    # Default health-check configuration
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/success-codes: "200"
+
+spec:
+  ingressClassName: alb
+
+  rules:
+    - host: mycareerai.click
+
+      http:
+        paths:
+
+          # --------------------------------------------------
+          # Backend - Interview APIs
+          # /api/v1/interview/...
+          # --------------------------------------------------
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: career-ai-backend
+                port:
+                  number: 5000
+
+          # --------------------------------------------------
+          # Backend - Resume prediction
+          # --------------------------------------------------
+          - path: /predict
+            pathType: Prefix
+            backend:
+              service:
+                name: career-ai-backend
+                port:
+                  number: 5000
+
+          # --------------------------------------------------
+          # Backend - Health
+          # --------------------------------------------------
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: career-ai-backend
+                port:
+                  number: 5000
+
+          # --------------------------------------------------
+          # Backend - Readiness
+          # --------------------------------------------------
+          - path: /ready
+            pathType: Exact
+            backend:
+              service:
+                name: career-ai-backend
+                port:
+                  number: 5000
+
+          # --------------------------------------------------
+          # Frontend - React application
+          # Must remain LAST as the catch-all route
+          # --------------------------------------------------
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: career-ai-frontend
+                port:
+                  number: 80

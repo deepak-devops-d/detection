@@ -1,0 +1,22 @@
+aws_region          = "ap-south-1"
+project_name        = "career-ai"
+environment         = "prod"
+cluster_name       = "career-ai-prod"
+kubernetes_version = "1.33"
+
+availability_zones = ["ap-south-1a", "ap-south-1b", "ap-south-1c"]
+
+enable_public_dns = false
+
+frontend_domain = ""
+api_domain      = ""
+route53_zone_id = ""
+
+bedrock_model_id = "amazon.nova-lite-v1:0"
+
+node_instance_types = ["m6i.large"]
+node_min_size      = 2
+node_desired_size  = 3
+node_max_size      = 6
+
+create_nat_gateway_per_az = true

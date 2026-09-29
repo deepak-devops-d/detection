@@ -1,0 +1,45 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BedrockInterviewInference",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+      "Resource": "REPLACE_WITH_BEDROCK_MODEL_OR_INFERENCE_PROFILE_ARN"
+    },
+    {
+      "Sid": "InterviewDynamoDB",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+      ],
+      "Resource": "REPLACE_WITH_DYNAMODB_TABLE_ARN"
+    },
+    {
+      "Sid": "InterviewMediaS3",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::REPLACE_WITH_INTERVIEW_MEDIA_BUCKET/interviews/*"
+    },
+    {
+      "Sid": "InterviewMediaBucketMetadata",
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketLocation"],
+      "Resource": "arn:aws:s3:::REPLACE_WITH_INTERVIEW_MEDIA_BUCKET"
+    },
+    {
+      "Sid": "TranscribeInterviewJobs",
+      "Effect": "Allow",
+      "Action": [
+        "transcribe:StartTranscriptionJob",
+        "transcribe:GetTranscriptionJob"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
